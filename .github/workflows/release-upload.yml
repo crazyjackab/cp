@@ -1,0 +1,54 @@
+# 从仓库 updates/ 目录上传已构建的安装包与 latest.json，无需在 CI 中重新编译。
+# 适用于本地已签名构建并提交到仓库后的发布。
+name: Release Upload
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find release assets
+        id: assets
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          SETUP=$(find updates -maxdepth 1 -name "*${VERSION}*setup.exe" -print -quit)
+          if [ -z "$SETUP" ]; then
+            echo "::error::未在 updates/ 找到版本 ${VERSION} 的安装包"
+            exit 1
+          fi
+          if [ ! -f updates/latest.json ]; then
+            echo "::error::缺少 updates/latest.json"
+            exit 1
+          fi
+          echo "setup=$SETUP" >> "$GITHUB_OUTPUT"
+          echo "Using setup: $SETUP"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: File Manager ${{ github.ref_name }}
+          body: |
+            ## File Manager ${{ github.ref_name }}
+
+            - 库内搜索与筛选（文件名、时间、大小、扩展名）
+            - 图片分类缩略图网格与预览
+            - 设置：资料库路径（迁移/切换）、移动/复制收纳模式
+            - 文档类型颜色区分与 UI 优化
+
+            **安装**：下载 `File Manager_*_x64-setup.exe` 运行。已安装旧版可在应用内 **设置 → 检查更新**。
+          files: |
+            ${{ steps.assets.outputs.setup }}
+            updates/latest.json
+          fail_on_unmatched_files: true
