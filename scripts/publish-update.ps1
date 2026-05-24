@@ -22,7 +22,9 @@ if (-not (Test-Path $sigPath)) {
 }
 
 $fileName = Split-Path $SetupPath -Leaf
-$encodedName = [uri]::EscapeDataString($fileName)
+# GitHub Release 上传后常将文件名中的空格替换为点号
+$fileNameForUrl = $fileName -replace ' ', '.'
+$encodedName = [uri]::EscapeDataString($fileNameForUrl)
 $signature = (Get-Content $sigPath -Raw).Trim()
 $url = "https://github.com/$GitHubRepo/releases/download/v$Version/$encodedName"
 
