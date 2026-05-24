@@ -1,0 +1,75 @@
+export interface ExtensionStat {
+  extension: string;
+  count: number;
+  bytes: number;
+}
+
+export interface DirStat {
+  path: string;
+  bytes: number;
+  file_count: number;
+}
+
+export interface ScanResult {
+  root: string;
+  file_count: number;
+  dir_count: number;
+  total_bytes: number;
+  by_extension: ExtensionStat[];
+  largest_dirs: DirStat[];
+}
+
+export interface CategoryStat {
+  id: string;
+  label: string;
+  file_count: number;
+  bytes: number;
+}
+
+export interface LibraryInfo {
+  root: string;
+  import_mode: string;
+  categories: CategoryStat[];
+  total_files: number;
+  total_bytes: number;
+}
+
+export interface LibraryFile {
+  name: string;
+  path: string;
+  category: string;
+  size: number;
+  modified: number;
+  original_path: string | null;
+  can_restore: boolean;
+}
+
+export interface ImportFailure {
+  path: string;
+  reason: string;
+}
+
+export interface ImportResult {
+  moved_count: number;
+  failed: ImportFailure[];
+}
+
+export interface PendingImportFile {
+  name: string;
+  path: string;
+  size: number;
+  target_category: string;
+}
+
+export type LibraryCategory =
+  | "all"
+  | "收件箱"
+  | "图片"
+  | "视频"
+  | "文档"
+  | "音频"
+  | "压缩包"
+  | "安装包"
+  | "其他";
+
+export type NavId = LibraryCategory | "overview" | "settings";
