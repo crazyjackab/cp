@@ -6,6 +6,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.2.0)"
+        required: true
+        default: "v0.2.0"
 
 permissions:
   contents: write
@@ -15,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Find release assets
         id: assets
@@ -37,10 +45,10 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: File Manager ${{ github.ref_name }}
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: File Manager ${{ github.event.inputs.tag || github.ref_name }}
           body: |
-            ## File Manager ${{ github.ref_name }}
+            ## File Manager ${{ github.event.inputs.tag || github.ref_name }}
 
             - 库内搜索与筛选（文件名、时间、大小、扩展名）
             - 图片分类缩略图网格与预览
