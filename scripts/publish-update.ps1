@@ -22,8 +22,9 @@ if (-not (Test-Path $sigPath)) {
 }
 
 $fileName = Split-Path $SetupPath -Leaf
+$encodedName = [uri]::EscapeDataString($fileName)
 $signature = (Get-Content $sigPath -Raw).Trim()
-$url = "https://github.com/$GitHubRepo/releases/download/v$Version/$fileName"
+$url = "https://github.com/$GitHubRepo/releases/download/v$Version/$encodedName"
 
 $payload = [ordered]@{
     version  = $Version
