@@ -73,3 +73,18 @@ export type LibraryCategory =
   | "其他";
 
 export type NavId = LibraryCategory | "overview" | "settings";
+
+export type ImportMode = "move" | "copy";
+
+export interface AppConfigInfo {
+  library_root: string;
+  import_mode: ImportMode | string;
+  config_path: string;
+  import_log_path: string;
+}
+
+export interface SetLibraryRootResult {
+  library_root: string;
+  migrated_files: number;
+  message: string;
+}

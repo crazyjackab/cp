@@ -3,7 +3,9 @@ import { LibraryView } from "./components/LibraryView";
 import { OverviewView } from "./components/OverviewView";
 import { SettingsView } from "./components/SettingsView";
 import { UpdateBanner } from "./components/UpdateBanner";
+import { IconFolder } from "./components/icons";
 import type { LibraryCategory, NavId } from "./types";
+import { navIcon } from "./utils/fileUi";
 
 const LIBRARY_NAV: { id: LibraryCategory; label: string }[] = [
   { id: "all", label: "全部" },
@@ -20,39 +22,53 @@ const LIBRARY_NAV: { id: LibraryCategory; label: string }[] = [
 function App() {
   const [nav, setNav] = useState<NavId>("all");
 
-  const isLibrary =
-    nav !== "overview" && nav !== "settings";
+  const isLibrary = nav !== "overview" && nav !== "settings";
 
   return (
     <div className="app">
       <aside className="sidebar">
-        <div className="brand">File Manager</div>
-        <div className="nav-section">资料库</div>
-        {LIBRARY_NAV.map((item) => (
+        <div className="brand">
+          <span className="brand-icon">
+            <IconFolder size={22} />
+          </span>
+          <span className="brand-text">
+            <span className="brand-title">File Manager</span>
+            <span className="brand-sub">文件整理</span>
+          </span>
+        </div>
+
+        <nav className="sidebar-nav">
+          <div className="nav-section">资料库</div>
+          {LIBRARY_NAV.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`nav-item ${nav === item.id ? "active" : ""}`}
+              onClick={() => setNav(item.id)}
+            >
+              {navIcon(item.id)}
+              <span>{item.label}</span>
+            </button>
+          ))}
+
+          <div className="nav-section">工具</div>
           <button
-            key={item.id}
             type="button"
-            className={`nav-item ${nav === item.id ? "active" : ""}`}
-            onClick={() => setNav(item.id)}
+            className={`nav-item ${nav === "overview" ? "active" : ""}`}
+            onClick={() => setNav("overview")}
           >
-            {item.label}
+            {navIcon("overview")}
+            <span>总览扫描</span>
           </button>
-        ))}
-        <div className="nav-section">工具</div>
-        <button
-          type="button"
-          className={`nav-item ${nav === "overview" ? "active" : ""}`}
-          onClick={() => setNav("overview")}
-        >
-          总览扫描
-        </button>
-        <button
-          type="button"
-          className={`nav-item ${nav === "settings" ? "active" : ""}`}
-          onClick={() => setNav("settings")}
-        >
-          设置
-        </button>
+          <button
+            type="button"
+            className={`nav-item ${nav === "settings" ? "active" : ""}`}
+            onClick={() => setNav("settings")}
+          >
+            {navIcon("settings")}
+            <span>设置</span>
+          </button>
+        </nav>
       </aside>
 
       <div className="main">

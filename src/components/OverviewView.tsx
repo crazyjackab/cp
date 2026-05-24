@@ -49,37 +49,39 @@ export function OverviewView() {
 
   return (
     <>
-      <header className="toolbar">
-        <div
-          className={`path-display ${rootPath ? "has-path" : ""}`}
-          title={rootPath || "尚未选择目录"}
-        >
-          {rootPath || "扫描任意文件夹，查看占用与类型分布"}
+      <header className="page-header">
+        <div className="page-header-main">
+          <h1 className="page-title">总览扫描</h1>
+          <p className="page-subtitle" title={rootPath || undefined}>
+            {rootPath || "扫描任意文件夹，查看占用与类型分布"}
+          </p>
         </div>
-        <div className="quick-paths">
-          {quickPaths.map(([label, path]) => (
-            <button
-              key={path}
-              type="button"
-              className="btn"
-              onClick={() => runScan(path)}
-              disabled={loading}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="page-actions">
+          <div className="quick-paths">
+            {quickPaths.map(([label, path]) => (
+              <button
+                key={path}
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => runScan(path)}
+                disabled={loading}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="btn btn-ghost" onClick={pickFolder} disabled={loading}>
+            选择目录
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => runScan(rootPath)}
+            disabled={loading || !rootPath}
+          >
+            {loading ? "扫描中…" : "开始扫描"}
+          </button>
         </div>
-        <button type="button" className="btn" onClick={pickFolder} disabled={loading}>
-          选择目录
-        </button>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={() => runScan(rootPath)}
-          disabled={loading || !rootPath}
-        >
-          {loading ? "扫描中…" : "开始扫描"}
-        </button>
       </header>
 
       <div className="content">

@@ -11,6 +11,21 @@ pub struct AppConfig {
     pub import_mode: String,
 }
 
+#[derive(Serialize)]
+pub struct AppConfigInfo {
+    pub library_root: String,
+    pub import_mode: String,
+    pub config_path: String,
+    pub import_log_path: String,
+}
+
+#[derive(Serialize)]
+pub struct SetLibraryRootResult {
+    pub library_root: String,
+    pub migrated_files: u32,
+    pub message: String,
+}
+
 fn default_import_mode() -> String {
     "move".to_string()
 }
@@ -57,4 +72,24 @@ pub fn save_config(config: &AppConfig) -> Result<(), String> {
 
 pub fn library_root() -> PathBuf {
     PathBuf::from(load_config().library_root)
+}
+
+pub fn get_app_config_info() -> Result<AppConfigInfo, String> {
+    let cfg = load_config();
+    Ok(AppConfigInfo {
+        library_root: cfg.library_root,
+        import_mode: cfg.import_mode,
+        config_path: config_path()?.to_string_lossy().into_owned(),
+        import_log_path: crate::import_log::log_path()?.to_string_lossy().into_owned(),
+    })
+}
+
+pub fn set_import_mode(mode: &str) -> Result<AppConfigInfo, String> {
+    if mode != "move" && mode != "copy" {
+        return Err("收纳模式无效，请选择移动或复制".to_string());
+    }
+    let mut cfg = load_config();
+    cfg.import_mode = mode.to_string();
+    save_config(&cfg)?;
+    get_app_config_info()
 }

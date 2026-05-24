@@ -156,6 +156,13 @@ fn unique_dest_path(dir: &Path, file_name: &str) -> PathBuf {
     dir.join(format!("{stem}_dup"))
 }
 
+fn copy_file(src: &Path, dest: &Path) -> Result<(), String> {
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {e}"))?;
+    }
+    fs::copy(src, dest).map_err(|e| format!("复制文件失败: {e}"))?;
+    Ok(())
+}
 fn move_file(src: &Path, dest: &Path) -> Result<(), String> {
     if let Some(parent) = dest.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {e}"))?;
@@ -199,7 +206,12 @@ pub fn import_file(src: &Path, root: &Path) -> Result<PathBuf, String> {
         .canonicalize()
         .unwrap_or_else(|_| src.to_path_buf());
     let dest = unique_dest_path(&dest_dir, file_name);
-    move_file(src, &dest)?;
+    let cfg = config::load_config();
+    if cfg.import_mode == "copy" {
+        copy_file(src, &dest)?;
+    } else {
+        move_file(src, &dest)?;
+    }
     import_log::add_record(&dest, &original_path);
     Ok(dest)
 }
@@ -548,4 +560,94 @@ pub fn list_library_files(category: Option<String>) -> Result<Vec<LibraryFile>, 
 
     files.sort_by(|a, b| b.modified.cmp(&a.modified));
     Ok(files)
+}
+
+fn prepare_library_root(root: &Path) -> Result<(), String> {
+    if let Some(parent) = root.parent() {
+        fs::create_dir_all(parent).map_err(|e| format!("创建资料库父目录失败: {e}"))?;
+    }
+    fs::create_dir_all(root).map_err(|e| format!("创建资料库失败: {e}"))?;
+    for cat in CATEGORIES {
+        fs::create_dir_all(root.join(cat)).map_err(|e| format!("创建分类目录「{cat}」失败: {e}"))?;
+    }
+    Ok(())
+}
+
+pub fn migrate_library(old_root: &Path, new_root: &Path) -> Result<u32, String> {
+    if !old_root.is_dir() {
+        return Ok(0);
+    }
+
+    prepare_library_root(new_root)?;
+
+    let mut count = 0u32;
+    for cat in CATEGORIES {
+        let old_cat = old_root.join(cat);
+        if !old_cat.is_dir() {
+            continue;
+        }
+        let new_cat = new_root.join(cat);
+        for entry in WalkDir::new(&old_cat)
+            .min_depth(1)
+            .max_depth(5)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_file())
+        {
+            let src = entry.path();
+            let file_name = src
+                .file_name()
+                .and_then(|n| n.to_str())
+                .ok_or_else(|| "无效文件名".to_string())?;
+            let dest = unique_dest_path(&new_cat, file_name);
+            move_file(src, &dest)?;
+            import_log::update_path(src, &dest);
+            count += 1;
+        }
+    }
+    Ok(count)
+}
+
+pub fn set_library_root(new_root: String, migrate: bool) -> Result<config::SetLibraryRootResult, String> {
+    let new_root = new_root.trim().to_string();
+    if new_root.is_empty() {
+        return Err("资料库路径不能为空".to_string());
+    }
+
+    let cfg = config::load_config();
+    let old_root = PathBuf::from(&cfg.library_root);
+    let new_path = PathBuf::from(&new_root);
+
+    if old_root == new_path {
+        return Ok(config::SetLibraryRootResult {
+            library_root: new_root,
+            migrated_files: 0,
+            message: "资料库路径未变更".to_string(),
+        });
+    }
+
+    let migrated_files = if migrate && old_root.is_dir() {
+        migrate_library(&old_root, &new_path)?
+    } else {
+        prepare_library_root(&new_path)?;
+        0
+    };
+
+    let mut updated = cfg;
+    updated.library_root = new_root.clone();
+    config::save_config(&updated)?;
+
+    let message = if migrated_files > 0 {
+        format!("已迁移 {migrated_files} 个文件到新资料库")
+    } else if migrate {
+        "已切换到新资料库（原位置无文件可迁移）".to_string()
+    } else {
+        "已切换到新资料库（原位置文件保留）".to_string()
+    };
+
+    Ok(config::SetLibraryRootResult {
+        library_root: new_root,
+        migrated_files,
+        message,
+    })
 }

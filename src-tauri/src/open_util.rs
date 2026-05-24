@@ -1,6 +1,18 @@
 use std::path::Path;
 
 #[tauri::command]
+pub fn open_folder(path: String) -> Result<(), String> {
+    let p = Path::new(&path);
+    if !p.exists() {
+        return Err(format!("路径不存在: {path}"));
+    }
+    if !p.is_dir() {
+        return Err(format!("不是文件夹: {path}"));
+    }
+    open::that(p).map_err(|e| format!("无法打开文件夹: {e}"))
+}
+
+#[tauri::command]
 pub fn open_file(path: String) -> Result<(), String> {
     let p = Path::new(&path);
     if !p.exists() {

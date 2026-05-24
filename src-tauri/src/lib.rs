@@ -3,11 +3,13 @@ mod import_log;
 mod library;
 mod open_util;
 mod scan;
+mod thumbnail;
 
 use library::{ImportResult, LibraryFile, LibraryInfo, PendingImportFile};
 use scan::ScanResult;
 use std::path::PathBuf;
 use tauri::{Manager, image::Image};
+use config::{AppConfigInfo, SetLibraryRootResult};
 
 fn app_icon() -> Image<'static> {
     Image::from_bytes(include_bytes!("../icons/32x32.png"))
@@ -86,6 +88,31 @@ fn delete_library_file(path: String) -> Result<(), String> {
     library::delete_library_file(&path)
 }
 
+#[tauri::command]
+fn get_image_data_url(path: String, max_size: Option<u32>) -> Result<String, String> {
+    thumbnail::get_image_data_url(&path, max_size.unwrap_or(320))
+}
+
+#[tauri::command]
+fn get_image_thumbnail(path: String) -> Result<String, String> {
+    thumbnail::get_image_thumbnail(&path)
+}
+
+#[tauri::command]
+fn get_app_config() -> Result<AppConfigInfo, String> {
+    config::get_app_config_info()
+}
+
+#[tauri::command]
+fn set_import_mode(mode: String) -> Result<AppConfigInfo, String> {
+    config::set_import_mode(&mode)
+}
+
+#[tauri::command]
+fn set_library_root(new_root: String, migrate: bool) -> Result<SetLibraryRootResult, String> {
+    library::set_library_root(new_root, migrate)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let icon = app_icon();
@@ -112,8 +139,14 @@ pub fn run() {
             restore_file,
             rename_library_file,
             delete_library_file,
+            get_image_data_url,
+            get_image_thumbnail,
+            get_app_config,
+            set_import_mode,
+            set_library_root,
             open_util::open_file,
             open_util::show_file_in_folder,
+            open_util::open_folder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

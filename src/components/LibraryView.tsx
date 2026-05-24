@@ -1,9 +1,19 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useDragDropImport } from "../hooks/useDragDropImport";
+import {
+  DEFAULT_LIBRARY_FILTERS,
+  collectExtensions,
+  filterLibraryFiles,
+  hasActiveFilters,
+  type LibraryFilters,
+} from "../utils/libraryFilter";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
+import { ImageGridView } from "./ImageGridView";
+import { ImagePreviewModal } from "./ImagePreviewModal";
 import { ImportConfirmModal } from "./ImportConfirmModal";
+import { LibrarySearchBar } from "./LibrarySearchBar";
 import { RenameModal } from "./RenameModal";
 import type {
   ImportResult,
@@ -13,6 +23,20 @@ import type {
   PendingImportFile,
 } from "../types";
 import { formatBytes, formatNumber } from "../utils";
+import { fileIcon, fileTone, fileTypeLabel } from "../utils/fileUi";
+import {
+  IconDesktop,
+  IconDownload,
+  IconEdit,
+  IconFiles,
+  IconImport,
+  IconLocate,
+  IconOpen,
+  IconRefresh,
+  IconRestore,
+  IconStorage,
+  IconTrash,
+} from "./icons";
 
 interface Props {
   category: LibraryCategory;
@@ -36,6 +60,20 @@ export function LibraryView({ category }: Props) {
   } | null>(null);
   const [renameTarget, setRenameTarget] = useState<LibraryFile | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<LibraryFile | null>(null);
+  const [previewFile, setPreviewFile] = useState<LibraryFile | null>(null);
+  const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_LIBRARY_FILTERS);
+
+  useEffect(() => {
+    setFilters(DEFAULT_LIBRARY_FILTERS);
+    setPreviewFile(null);
+  }, [category]);
+
+  const availableExtensions = useMemo(() => collectExtensions(files), [files]);
+  const filteredFiles = useMemo(
+    () => filterLibraryFiles(files, filters),
+    [files, filters],
+  );
+  const filtering = hasActiveFilters(filters);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -133,8 +171,8 @@ export function LibraryView({ category }: Props) {
     await importPaths(paths);
   };
 
-  const categoryLabel =
-    category === "all" ? "全部文件" : category;
+  const categoryLabel = category === "all" ? "全部文件" : category;
+  const isImageGrid = category === "图片";
 
   const openFile = async (path: string) => {
     setError("");
@@ -243,27 +281,54 @@ export function LibraryView({ category }: Props) {
         />
       )}
 
-      <header className="toolbar">
-        <div className="path-display has-path" title={info?.root ?? ""}>
-          资料库：{info?.root ?? "D:\\FileManager\\资料库"}
+      {previewFile && (
+        <ImagePreviewModal
+          file={previewFile}
+          onOpen={openFile}
+          onLocate={showInFolder}
+          onClose={() => setPreviewFile(null)}
+        />
+      )}
+
+      <header className="page-header">
+        <div className="page-header-main">
+          <h1 className="page-title">{categoryLabel}</h1>
+          <p className="page-subtitle" title={info?.root ?? ""}>
+            {info?.root ?? "D:\\FileManager\\资料库"}
+          </p>
         </div>
-        <button type="button" className="btn btn-primary" onClick={pickAndImport} disabled={loading}>
-          收纳文件
-        </button>
-        <button type="button" className="btn" onClick={importDesktop} disabled={loading}>
-          从桌面收纳
-        </button>
-        <button type="button" className="btn" onClick={importDownloads} disabled={loading}>
-          从下载收纳
-        </button>
-        <button type="button" className="btn" onClick={refresh} disabled={loading}>
-          刷新
-        </button>
+        <div className="page-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={pickAndImport}
+            disabled={loading}
+          >
+            <IconImport size={16} />
+            收纳文件
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={importDesktop} disabled={loading}>
+            <IconDesktop size={16} />
+            桌面
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={importDownloads} disabled={loading}>
+            <IconDownload size={16} />
+            下载
+          </button>
+          <button
+            type="button"
+            className="btn btn-icon"
+            onClick={refresh}
+            disabled={loading}
+            title="刷新"
+            aria-label="刷新"
+          >
+            <IconRefresh size={16} />
+          </button>
+        </div>
       </header>
 
-      <div
-        className={`content drop-zone ${isDragging ? "drop-zone-active" : ""}`}
-      >
+      <div className={`content drop-zone ${isDragging ? "drop-zone-active" : ""}`}>
         {isDragging && (
           <div className="drop-overlay" aria-hidden>
             <div className="drop-overlay-inner">
@@ -274,124 +339,133 @@ export function LibraryView({ category }: Props) {
           </div>
         )}
 
-        {message && <div className="toast">{message}</div>}
-        {error && <div className="error">{error}</div>}
-        {loading && <div className="loading">处理中…</div>}
+        {message && <p className="toast">{message}</p>}
+        {error && <p className="alert alert-error">{error}</p>}
+        {loading && <p className="loading-inline">处理中…</p>}
 
         {info && !loading && (
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="label">资料库文件</div>
-              <div className="value">{formatNumber(info.total_files)}</div>
+          <div className="stat-strip">
+            <div className="stat-item">
+              <span className="stat-icon"><IconFiles size={18} /></span>
+              <div>
+                <span className="stat-value">{formatNumber(info.total_files)}</span>
+                <span className="stat-label">文件</span>
+              </div>
             </div>
-            <div className="stat-card">
-              <div className="label">总占用</div>
-              <div className="value">{formatBytes(info.total_bytes)}</div>
+            <div className="stat-item">
+              <span className="stat-icon"><IconStorage size={18} /></span>
+              <div>
+                <span className="stat-value">{formatBytes(info.total_bytes)}</span>
+                <span className="stat-label">占用空间</span>
+              </div>
             </div>
-            <div className="stat-card">
-              <div className="label">收纳方式</div>
-              <div className="value value-sm">移动</div>
-            </div>
-            <div className="stat-card">
-              <div className="label">当前视图</div>
-              <div className="value value-sm">{categoryLabel}</div>
+            <div className="stat-item stat-item-muted">
+              <span className="stat-value stat-value-sm">
+                {info.import_mode === "copy" ? "复制收纳" : "移动收纳"}
+              </span>
+              <span className="stat-label">
+                {filtering
+                  ? `筛选 ${filteredFiles.length} / ${files.length} 项`
+                  : `本页 ${files.length} 项`}
+              </span>
             </div>
           </div>
+        )}
+
+        {!loading && files.length > 0 && (
+          <LibrarySearchBar
+            filters={filters}
+            onChange={setFilters}
+            availableExtensions={availableExtensions}
+            resultCount={filteredFiles.length}
+            totalCount={files.length}
+          />
         )}
 
         {!loading && files.length === 0 && !isDragging && (
-          <div className="empty">
-            <p>资料库还是空的。</p>
-            <p>
-              <strong>拖拽文件或文件夹到本窗口</strong>，松开后自动按类型收纳。
-            </p>
-            <p>也可点击「从桌面收纳」或「收纳文件」。</p>
-            <p className="hint">文件会移动到 D:\FileManager\资料库 下的 图片、视频、文档 等文件夹。</p>
+          <div className="empty-state">
+            <div className="empty-icon"><IconImport size={32} /></div>
+            <h2>资料库还是空的</h2>
+            <p>拖拽文件或文件夹到窗口，松开后自动按类型收纳。</p>
+            <p className="hint">也可点击上方「收纳文件」或「桌面 / 下载」快捷收纳。</p>
           </div>
         )}
 
-        {files.length > 0 && (
-          <div className="panel">
-            <div className="panel-header">
-              {categoryLabel}（{files.length}）
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>名称</th>
-                  <th>分类</th>
-                  <th>大小</th>
-                  <th>修改时间</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {files.map((f) => (
-                  <tr
-                    key={f.path}
-                    className="file-row"
-                    onDoubleClick={() => openFile(f.path)}
-                  >
-                    <td className="name-cell" title={f.path}>
-                      <button
-                        type="button"
-                        className="name-link"
-                        onClick={() => openFile(f.path)}
-                      >
-                        {f.name}
-                      </button>
-                    </td>
-                    <td>{f.category}</td>
-                    <td>{formatBytes(f.size)}</td>
-                    <td>{formatDate(f.modified)}</td>
-                    <td className="action-cell">
-                      <button
-                        type="button"
-                        className="btn btn-sm"
-                        onClick={() => openFile(f.path)}
-                      >
-                        打开
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-sm"
-                        onClick={() => showInFolder(f.path)}
-                      >
-                        定位
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-restore"
-                        title={
-                          f.original_path
-                            ? `还原到：${f.original_path}`
-                            : "还原到桌面"
-                        }
-                        onClick={() => restoreToOriginal(f)}
-                      >
-                        还原
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-sm"
-                        onClick={() => setRenameTarget(f)}
-                      >
-                        重命名
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-danger"
-                        onClick={() => setDeleteTarget(f)}
-                      >
-                        删除
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {!loading && files.length > 0 && filteredFiles.length === 0 && (
+          <div className="empty-state empty-state-compact">
+            <h2>没有匹配的文件</h2>
+            <p>试试调整搜索词或筛选条件。</p>
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setFilters(DEFAULT_LIBRARY_FILTERS)}
+            >
+              清除筛选
+            </button>
           </div>
         )}
+
+        {filteredFiles.length > 0 && isImageGrid ? (
+          <ImageGridView
+            files={filteredFiles}
+            previewPath={previewFile?.path ?? null}
+            onPreview={setPreviewFile}
+            onOpen={openFile}
+          />
+        ) : filteredFiles.length > 0 ? (
+          <div className="file-list">
+            {filteredFiles.map((f) => (
+              <div
+                key={f.path}
+                className="file-item"
+                onDoubleClick={() => openFile(f.path)}
+              >
+                <div className={`file-icon-wrap ${fileTone(f.category, f.name)}`}>
+                  {fileIcon(f.category, f.name)}
+                </div>
+                <div className="file-main">
+                  <button
+                    type="button"
+                    className="file-name"
+                    title={f.path}
+                    onClick={() => openFile(f.path)}
+                  >
+                    {f.name}
+                  </button>
+                  <div className="file-meta">
+                    <span className={`category-pill ${fileTone(f.category, f.name)}`}>
+                      {fileTypeLabel(f.category, f.name)}
+                    </span>
+                    <span>{formatBytes(f.size)}</span>
+                    <span>{formatDate(f.modified)}</span>
+                  </div>
+                </div>
+                <div className="file-actions">
+                  <button type="button" className="icon-btn" title="打开" onClick={() => openFile(f.path)}>
+                    <IconOpen size={16} />
+                  </button>
+                  <button type="button" className="icon-btn" title="定位" onClick={() => showInFolder(f.path)}>
+                    <IconLocate size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-btn icon-btn-warn"
+                    title={f.original_path ? `还原到：${f.original_path}` : "还原到桌面"}
+                    onClick={() => restoreToOriginal(f)}
+                  >
+                    <IconRestore size={16} />
+                  </button>
+                  <button type="button" className="icon-btn" title="重命名" onClick={() => setRenameTarget(f)}>
+                    <IconEdit size={16} />
+                  </button>
+                  <button type="button" className="icon-btn icon-btn-danger" title="删除" onClick={() => setDeleteTarget(f)}>
+                    <IconTrash size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
     </>
   );

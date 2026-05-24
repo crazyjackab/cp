@@ -1,0 +1,11 @@
+﻿{
+  "version": "0.2.0",
+  "notes": "File Manager v0.2.0\n\n- 库内搜索与筛选（文件名、时间、大小、扩展名）\n- 图片分类缩略图网格与预览\n- 设置：资料库路径（迁移/切换）、移动/复制收纳模式\n- 文档类型颜色区分与 UI 优化",
+  "pub_date": "2026-05-24T10:46:14Z",
+  "platforms": {
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUQzVNem8vcUx4am5QU09aZ3Bnc2NmUWtBRGRwTVhHdXJTRE9NSDRrZGc2ZktSTUpRWGhDcWJwOHZ6ZWljd3RxWldtQWFNbkVNeVhrcjJLbjI3dzhkTUg0MEt1cTIrQndRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc5NjE5NTQ1CWZpbGU6RmlsZSBNYW5hZ2VyXzAuMi4wX3g2NC1zZXR1cC5leGUKR3RJWmQxWUVBZ1c4MXhBbUdXcXZhR05VZkVoN2ltU1Bid0hoTjFwWVoxTG42NXZyQnE1bmYybGcxbmdKRDBEemVxWHBUQnRYa2RGVERuZzBoSzRWQnc9PQo=",
+      "url": "https://github.com/crazyjackab/cp/releases/download/v0.2.0/File%20Manager_0.2.0_x64-setup.exe"
+    }
+  }
+}

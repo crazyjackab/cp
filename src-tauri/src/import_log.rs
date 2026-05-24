@@ -15,7 +15,7 @@ struct ImportLogFile {
     records: Vec<ImportRecord>,
 }
 
-fn log_path() -> Result<PathBuf, String> {
+pub fn log_path() -> Result<PathBuf, String> {
     let appdata = std::env::var("APPDATA").map_err(|_| "无法获取 APPDATA".to_string())?;
     Ok(PathBuf::from(appdata).join("FileManager").join("import_log.json"))
 }
