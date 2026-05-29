@@ -2,10 +2,11 @@ mod config;
 mod import_log;
 mod library;
 mod open_util;
+mod preview;
 mod scan;
 mod thumbnail;
 
-use library::{ImportResult, LibraryFile, LibraryInfo, PendingImportFile};
+use library::{BatchOperationResult, ImportResult, LibraryFile, LibraryInfo, PendingImportFile, ReclassifyResult};
 use scan::ScanResult;
 use std::path::PathBuf;
 use tauri::{Manager, image::Image};
@@ -113,6 +114,37 @@ fn set_library_root(new_root: String, migrate: bool) -> Result<SetLibraryRootRes
     library::set_library_root(new_root, migrate)
 }
 
+#[tauri::command]
+fn reclassify_misplaced_files(
+    category: Option<String>,
+    dry_run: Option<bool>,
+) -> Result<ReclassifyResult, String> {
+    library::reclassify_misplaced(category, dry_run.unwrap_or(false))
+}
+
+#[tauri::command]
+fn read_text_preview(path: String, max_bytes: Option<u64>) -> Result<preview::TextPreview, String> {
+    preview::read_text_preview(&path, max_bytes)
+}
+
+#[tauri::command]
+fn batch_delete_library_files(paths: Vec<String>) -> Result<BatchOperationResult, String> {
+    library::batch_delete_library_files(paths)
+}
+
+#[tauri::command]
+fn batch_restore_files(paths: Vec<String>) -> Result<BatchOperationResult, String> {
+    library::batch_restore_files(paths)
+}
+
+#[tauri::command]
+fn batch_move_to_category(
+    paths: Vec<String>,
+    target_category: String,
+) -> Result<BatchOperationResult, String> {
+    library::batch_move_to_category(paths, target_category)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let icon = app_icon();
@@ -144,6 +176,11 @@ pub fn run() {
             get_app_config,
             set_import_mode,
             set_library_root,
+            reclassify_misplaced_files,
+            read_text_preview,
+            batch_delete_library_files,
+            batch_restore_files,
+            batch_move_to_category,
             open_util::open_file,
             open_util::show_file_in_folder,
             open_util::open_folder,

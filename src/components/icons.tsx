@@ -182,6 +182,16 @@ export function IconOpen(p: IconProps) {
   );
 }
 
+export function IconEye(p: IconProps) {
+  const { size, className } = { ...defaults, ...p };
+  return (
+    <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
 export function IconLocate(p: IconProps) {
   const { size, className } = { ...defaults, ...p };
   return (

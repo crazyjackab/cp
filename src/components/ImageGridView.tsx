@@ -5,24 +5,44 @@ import { IconImage } from "./icons";
 
 interface CellProps {
   file: LibraryFile;
-  selected: boolean;
-  onSelect: () => void;
+  index: number;
+  batchSelected: boolean;
+  previewActive: boolean;
+  onPreview: () => void;
   onOpen: () => void;
+  onToggleSelect: (shiftKey: boolean, ctrlKey: boolean) => void;
 }
 
-function ImageGridCell({ file, selected, onSelect, onOpen }: CellProps) {
+function ImageGridCell({
+  file,
+  batchSelected,
+  previewActive,
+  onPreview,
+  onOpen,
+  onToggleSelect,
+}: CellProps) {
   const { url, loading, failed } = useImageDataUrl(file.path, 320);
 
   return (
     <article
-      className={`image-grid-item ${selected ? "selected" : ""}`}
-      onClick={onSelect}
+      className={`image-grid-item ${batchSelected ? "batch-selected" : ""} ${previewActive ? "preview-active" : ""}`}
       onDoubleClick={(e) => {
         e.preventDefault();
         onOpen();
       }}
     >
-      <div className="image-grid-thumb">
+      <label className="image-grid-check" title="选择">
+        <input
+          type="checkbox"
+          checked={batchSelected}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleSelect(e.shiftKey, e.ctrlKey || e.metaKey);
+          }}
+        />
+      </label>
+      <button type="button" className="image-grid-thumb" onClick={onPreview}>
         {url ? (
           <img src={url} alt={file.name} loading="lazy" draggable={false} />
         ) : loading ? (
@@ -33,7 +53,7 @@ function ImageGridCell({ file, selected, onSelect, onOpen }: CellProps) {
             <span>无法预览</span>
           </span>
         ) : null}
-      </div>
+      </button>
       <div className="image-grid-meta">
         <span className="image-grid-name" title={file.name}>
           {file.name}
@@ -47,20 +67,32 @@ function ImageGridCell({ file, selected, onSelect, onOpen }: CellProps) {
 interface GridProps {
   files: LibraryFile[];
   previewPath: string | null;
+  batchSelected: Set<string>;
   onPreview: (file: LibraryFile) => void;
   onOpen: (path: string) => void;
+  onToggleSelect: (file: LibraryFile, index: number, shiftKey: boolean, ctrlKey: boolean) => void;
 }
 
-export function ImageGridView({ files, previewPath, onPreview, onOpen }: GridProps) {
+export function ImageGridView({
+  files,
+  previewPath,
+  batchSelected,
+  onPreview,
+  onOpen,
+  onToggleSelect,
+}: GridProps) {
   return (
     <div className="image-grid">
-      {files.map((file) => (
+      {files.map((file, index) => (
         <ImageGridCell
           key={file.path}
           file={file}
-          selected={previewPath === file.path}
-          onSelect={() => onPreview(file)}
+          index={index}
+          batchSelected={batchSelected.has(file.path)}
+          previewActive={previewPath === file.path}
+          onPreview={() => onPreview(file)}
           onOpen={() => onOpen(file.path)}
+          onToggleSelect={(shiftKey, ctrlKey) => onToggleSelect(file, index, shiftKey, ctrlKey)}
         />
       ))}
     </div>

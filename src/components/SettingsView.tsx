@@ -172,225 +172,289 @@ export function SettingsView() {
       </header>
 
       <div className="content settings-content">
-        <section className="settings-section">
-          <h2 className="settings-title">资料库</h2>
-          <p className="settings-desc">
-            修改资料库位置与收纳方式。配置保存在本机，不会上传。
-          </p>
-
-          {libraryMessage ? <p className="toast">{libraryMessage}</p> : null}
-          {libraryError ? <p className="alert alert-error">{libraryError}</p> : null}
-
-          <div className="settings-group">
-            <h3>资料库路径</h3>
-            <p className="path-display" title={appConfig?.library_root ?? ""}>
-              {appConfig?.library_root ?? "加载中…"}
-            </p>
-            <div className="settings-actions">
-              <button
-                type="button"
-                className="btn btn-primary"
-                disabled={libraryBusy || !appConfig}
-                onClick={() => void pickLibraryRoot()}
-              >
-                更改路径…
-              </button>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                disabled={libraryBusy || !appConfig}
-                onClick={() => appConfig && void openPath("open_folder", appConfig.library_root)}
-              >
-                <IconOpen size={16} />
-                打开资料库
-              </button>
-            </div>
-          </div>
-
-          <div className="settings-group">
-            <h3>收纳方式</h3>
-            <p className="settings-desc">新收纳的文件默认按此方式处理。</p>
-            <div className="segmented">
-              {IMPORT_MODE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  className={appConfig?.import_mode === opt.id ? "active" : ""}
-                  disabled={libraryBusy || !appConfig}
-                  title={opt.desc}
-                  onClick={() => void setImportMode(opt.id)}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <p className="form-hint">
-              {appConfig?.import_mode === "copy"
-                ? "复制模式：原文件保留，资料库中为副本。"
-                : "移动模式：文件从原位置移入资料库。"}
-            </p>
-          </div>
-
-          <div className="settings-group">
-            <h3>配置文件</h3>
-            <div className="config-path-list">
-              <div className="config-path-item">
-                <span className="config-path-label">应用配置</span>
-                <span className="config-path-value" title={appConfig?.config_path}>
-                  {appConfig?.config_path ?? "—"}
-                </span>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  disabled={!appConfig}
-                  onClick={() => appConfig && void revealPath(appConfig.config_path)}
-                >
-                  <IconLocate size={14} />
-                  定位
-                </button>
-              </div>
-              <div className="config-path-item">
-                <span className="config-path-label">收纳日志</span>
-                <span className="config-path-value" title={appConfig?.import_log_path}>
-                  {appConfig?.import_log_path ?? "—"}
-                </span>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-sm"
-                  disabled={!appConfig}
-                  onClick={() => appConfig && void revealPath(appConfig.import_log_path)}
-                >
-                  <IconLocate size={14} />
-                  定位
-                </button>
+        <div className="settings-layout">
+          <section className="settings-panel settings-panel-primary">
+            <div className="settings-panel-header">
+              <div>
+                <h2 className="settings-title">资料库</h2>
+                <p className="settings-desc">
+                  修改资料库位置与收纳方式。配置保存在本机，不会上传。
+                </p>
               </div>
             </div>
-          </div>
-        </section>
 
-        <section className="settings-section">
-          <h2 className="settings-title">外观</h2>
-          <p className="settings-desc">自定义界面主题、强调色与字号，设置会自动保存。</p>
+            {libraryMessage ? <p className="toast">{libraryMessage}</p> : null}
+            {libraryError ? <p className="alert alert-error">{libraryError}</p> : null}
 
-          <div className="settings-group">
-            <h3>主题模式</h3>
-            <div className="option-grid theme-grid">
-              {THEME_OPTIONS.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  className={`option-card ${settings.themeMode === opt.id ? "selected" : ""}`}
-                  onClick={() => setThemeMode(opt.id)}
-                >
-                  <span className={`theme-preview theme-preview-${opt.id}`} />
-                  <span className="option-label">{opt.label}</span>
-                  <span className="option-hint">{opt.desc}</span>
+            <div className="settings-row settings-row-path">
+              <div className="settings-row-main">
+                <h3>资料库路径</h3>
+                <p>文件会按类型收纳到这个目录下。</p>
+              </div>
+              <div className="settings-row-control">
+                <p className="path-display" title={appConfig?.library_root ?? ""}>
+                  {appConfig?.library_root ?? "加载中…"}
+                </p>
+                <div className="settings-inline-actions">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={libraryBusy || !appConfig}
+                    onClick={() => void pickLibraryRoot()}
+                  >
+                    更改路径…
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    disabled={libraryBusy || !appConfig}
+                    onClick={() => appConfig && void openPath("open_folder", appConfig.library_root)}
+                  >
+                    <IconOpen size={16} />
+                    打开资料库
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="settings-row">
+              <div className="settings-row-main">
+                <h3>收纳方式</h3>
+                <p>新收纳的文件默认按此方式处理。</p>
+              </div>
+              <div className="settings-row-control">
+                <div className="segmented">
+                  {IMPORT_MODE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      className={appConfig?.import_mode === opt.id ? "active" : ""}
+                      disabled={libraryBusy || !appConfig}
+                      title={opt.desc}
+                      onClick={() => void setImportMode(opt.id)}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="form-hint">
+                  {appConfig?.import_mode === "copy"
+                    ? "复制模式：原文件保留，资料库中为副本。"
+                    : "移动模式：文件从原位置移入资料库。"}
+                </p>
+              </div>
+            </div>
+
+            <div className="settings-row settings-row-stack">
+              <div className="settings-row-main">
+                <h3>配置文件</h3>
+                <p>应用配置与收纳日志的位置。</p>
+              </div>
+              <div className="settings-row-control">
+                <div className="config-path-list">
+                  <div className="config-path-item">
+                    <span className="config-path-label">应用配置</span>
+                    <span className="config-path-value" title={appConfig?.config_path}>
+                      {appConfig?.config_path ?? "—"}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      disabled={!appConfig}
+                      onClick={() => appConfig && void revealPath(appConfig.config_path)}
+                    >
+                      <IconLocate size={14} />
+                      定位
+                    </button>
+                  </div>
+                  <div className="config-path-item">
+                    <span className="config-path-label">收纳日志</span>
+                    <span className="config-path-value" title={appConfig?.import_log_path}>
+                      {appConfig?.import_log_path ?? "—"}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      disabled={!appConfig}
+                      onClick={() => appConfig && void revealPath(appConfig.import_log_path)}
+                    >
+                      <IconLocate size={14} />
+                      定位
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="settings-credit" aria-label="开发者信息">
+              <span className="settings-credit-kicker">Developer</span>
+              <strong>
+                湖北
+                <span className="settings-credit-name">陈鹏</span>
+                制作
+              </strong>
+              <p>为本地文件整理而生，专注资料库收纳、分类浏览与安全管理。</p>
+              <span className="settings-credit-version">File Manager v{currentVersion}</span>
+              <span className="settings-credit-eq" aria-hidden>
+                <i />
+                <i />
+                <i />
+                <i />
+                <i />
+              </span>
+            </div>
+          </section>
+
+          <div className="settings-stack">
+            <section className="settings-panel">
+              <div className="settings-panel-header">
+                <div>
+                  <h2 className="settings-title">外观</h2>
+                  <p className="settings-desc">自定义界面主题、强调色与字号。</p>
+                </div>
+              </div>
+
+              <div className="settings-row settings-row-stack">
+                <div className="settings-row-main">
+                  <h3>主题模式</h3>
+                </div>
+                <div className="settings-row-control">
+                  <div className="option-grid theme-grid">
+                    {THEME_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        className={`option-card ${settings.themeMode === opt.id ? "selected" : ""}`}
+                        onClick={() => setThemeMode(opt.id)}
+                      >
+                        <span className={`theme-preview theme-preview-${opt.id}`} />
+                        <span className="option-label">{opt.label}</span>
+                        <span className="option-hint">{opt.desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="settings-row">
+                <div className="settings-row-main">
+                  <h3>强调色</h3>
+                </div>
+                <div className="settings-row-control">
+                  <div className="option-row accent-row">
+                    {ACCENT_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        className={`accent-swatch ${settings.accent === opt.id ? "selected" : ""}`}
+                        title={opt.label}
+                        onClick={() => setAccent(opt.id)}
+                        style={{ "--swatch": opt.color } as CSSProperties}
+                      >
+                        <span className="accent-dot" />
+                        <span className="accent-name">{opt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="settings-row">
+                <div className="settings-row-main">
+                  <h3>界面字号</h3>
+                </div>
+                <div className="settings-row-control">
+                  <div className="segmented">
+                    {FONT_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        className={settings.fontSize === opt.id ? "active" : ""}
+                        onClick={() => setFontSize(opt.id)}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="settings-footer-actions">
+                <button type="button" className="btn" onClick={resetAppearance}>
+                  恢复默认外观
                 </button>
-              ))}
-            </div>
-          </div>
+              </div>
+            </section>
 
-          <div className="settings-group">
-            <h3>强调色</h3>
-            <div className="option-row accent-row">
-              {ACCENT_OPTIONS.map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  className={`accent-swatch ${settings.accent === opt.id ? "selected" : ""}`}
-                  title={opt.label}
-                  onClick={() => setAccent(opt.id)}
-                  style={{ "--swatch": opt.color } as CSSProperties}
+            <section className="settings-panel">
+              <div className="settings-panel-header">
+                <div>
+                  <h2 className="settings-title">更新</h2>
+                  <p className="settings-desc">当前版本 v{currentVersion}。</p>
+                </div>
+              </div>
+
+              <div className="settings-row">
+                <div className="settings-row-main">
+                  <h3>自动检查</h3>
+                  <p>启动正式安装包时自动检查新版本。</p>
+                </div>
+                <div className="settings-row-control settings-row-control-inline">
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={updaterSettings.autoCheckOnStartup}
+                      onChange={(e) => setAutoCheckOnStartup(e.target.checked)}
+                    />
+                    <span>启用</span>
+                  </label>
+                </div>
+              </div>
+
+              {message ? (
+                <p
+                  className={`update-status ${
+                    phase === "error" ? "error" : phase === "available" ? "success" : ""
+                  }`}
                 >
-                  <span className="accent-dot" />
-                  <span className="accent-name">{opt.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+                  {message}
+                </p>
+              ) : null}
 
-          <div className="settings-group">
-            <h3>界面字号</h3>
-            <div className="segmented">
-              {FONT_OPTIONS.map((opt) => (
+              {availableUpdate?.body ? (
+                <pre className="update-notes">{availableUpdate.body}</pre>
+              ) : null}
+
+              {updating && progress !== null ? (
+                <div className="update-progress update-progress-block">
+                  <span className="update-progress-bar" style={{ width: `${progress}%` }} />
+                  <span className="update-progress-label">{progress}%</span>
+                </div>
+              ) : null}
+
+              <div className="settings-footer-actions">
                 <button
-                  key={opt.id}
                   type="button"
-                  className={settings.fontSize === opt.id ? "active" : ""}
-                  onClick={() => setFontSize(opt.id)}
+                  className="btn btn-primary"
+                  disabled={checking || updating}
+                  onClick={() => void checkForUpdate()}
                 >
-                  {opt.label}
+                  {checking ? "检查中…" : "检查更新"}
                 </button>
-              ))}
-            </div>
+                {phase === "available" ? (
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={updating}
+                    onClick={() => void downloadAndInstall()}
+                  >
+                    下载并安装 v{availableUpdate?.version}
+                  </button>
+                ) : null}
+              </div>
+            </section>
           </div>
-
-          <div className="settings-actions">
-            <button type="button" className="btn" onClick={resetAppearance}>
-              恢复默认外观
-            </button>
-          </div>
-        </section>
-
-        <section className="settings-section">
-          <h2 className="settings-title">更新</h2>
-          <p className="settings-desc">
-            当前版本 v{currentVersion}。正式安装包可自动检查并安装新版本。
-          </p>
-
-          <div className="settings-group">
-            <label className="settings-toggle">
-              <input
-                type="checkbox"
-                checked={updaterSettings.autoCheckOnStartup}
-                onChange={(e) => setAutoCheckOnStartup(e.target.checked)}
-              />
-              <span>启动时自动检查更新</span>
-            </label>
-          </div>
-
-          {message ? (
-            <p
-              className={`update-status ${
-                phase === "error" ? "error" : phase === "available" ? "success" : ""
-              }`}
-            >
-              {message}
-            </p>
-          ) : null}
-
-          {availableUpdate?.body ? (
-            <pre className="update-notes">{availableUpdate.body}</pre>
-          ) : null}
-
-          {updating && progress !== null ? (
-            <div className="update-progress update-progress-block">
-              <span className="update-progress-bar" style={{ width: `${progress}%` }} />
-              <span className="update-progress-label">{progress}%</span>
-            </div>
-          ) : null}
-
-          <div className="settings-actions">
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled={checking || updating}
-              onClick={() => void checkForUpdate()}
-            >
-              {checking ? "检查中…" : "检查更新"}
-            </button>
-            {phase === "available" ? (
-              <button
-                type="button"
-                className="btn"
-                disabled={updating}
-                onClick={() => void downloadAndInstall()}
-              >
-                下载并安装 v{availableUpdate?.version}
-              </button>
-            ) : null}
-          </div>
-        </section>
+        </div>
       </div>
     </>
   );

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useDragDropImport } from "../hooks/useDragDropImport";
+import { useFileSelection } from "../hooks/useFileSelection";
 import {
   DEFAULT_LIBRARY_FILTERS,
   collectExtensions,
@@ -10,30 +11,39 @@ import {
   type LibraryFilters,
 } from "../utils/libraryFilter";
 import { DeleteConfirmModal } from "./DeleteConfirmModal";
+import { BatchDeleteModal } from "./BatchDeleteModal";
+import { BatchMoveModal } from "./BatchMoveModal";
+import { BatchToolbar } from "./BatchToolbar";
 import { ImageGridView } from "./ImageGridView";
-import { ImagePreviewModal } from "./ImagePreviewModal";
+import { FilePreviewModal } from "./FilePreviewModal";
 import { ImportConfirmModal } from "./ImportConfirmModal";
 import { LibrarySearchBar } from "./LibrarySearchBar";
 import { RenameModal } from "./RenameModal";
 import type {
+  BatchOperationResult,
   ImportResult,
   LibraryCategory,
   LibraryFile,
   LibraryInfo,
+  LibraryMoveTarget,
   PendingImportFile,
+  ReclassifyResult,
 } from "../types";
 import { formatBytes, formatNumber } from "../utils";
-import { fileIcon, fileTone, fileTypeLabel } from "../utils/fileUi";
+import { fileIcon, fileTone, fileTypeLabel, inferLibraryCategory, isMisplacedInCategory } from "../utils/fileUi";
+import { canPreview } from "../utils/previewKind";
 import {
   IconDesktop,
   IconDownload,
   IconEdit,
+  IconEye,
   IconFiles,
   IconImport,
   IconLocate,
   IconOpen,
   IconRefresh,
   IconRestore,
+  IconScan,
   IconStorage,
   IconTrash,
 } from "./icons";
@@ -62,10 +72,14 @@ export function LibraryView({ category }: Props) {
   const [deleteTarget, setDeleteTarget] = useState<LibraryFile | null>(null);
   const [previewFile, setPreviewFile] = useState<LibraryFile | null>(null);
   const [filters, setFilters] = useState<LibraryFilters>(DEFAULT_LIBRARY_FILTERS);
+  const [batchDeleteOpen, setBatchDeleteOpen] = useState(false);
+  const [batchMoveOpen, setBatchMoveOpen] = useState(false);
+  const selection = useFileSelection();
 
   useEffect(() => {
     setFilters(DEFAULT_LIBRARY_FILTERS);
     setPreviewFile(null);
+    selection.clear();
   }, [category]);
 
   const availableExtensions = useMemo(() => collectExtensions(files), [files]);
@@ -74,6 +88,15 @@ export function LibraryView({ category }: Props) {
     [files, filters],
   );
   const filtering = hasActiveFilters(filters);
+  const misplacedCount = useMemo(
+    () => files.filter(isMisplacedInCategory).length,
+    [files],
+  );
+  const visiblePaths = useMemo(() => filteredFiles.map((f) => f.path), [filteredFiles]);
+  const selectedFiles = useMemo(
+    () => filteredFiles.filter((f) => selection.isSelected(f.path)),
+    [filteredFiles, selection.selected, selection.isSelected],
+  );
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -173,6 +196,56 @@ export function LibraryView({ category }: Props) {
 
   const categoryLabel = category === "all" ? "全部文件" : category;
   const isImageGrid = category === "图片";
+  const reclassifyLabel = category === "all" ? "整理全库" : "整理分类";
+
+  const reclassifyMisplaced = async () => {
+    setError("");
+    setMessage("");
+    setLoading(true);
+    try {
+      const preview = await invoke<ReclassifyResult>("reclassify_misplaced_files", {
+        category: category === "all" ? "all" : category,
+        dryRun: true,
+      });
+      if (preview.moved_count === 0) {
+        setMessage(
+          category === "all"
+            ? "全库文件分类均正确，无需整理"
+            : `「${category}」中没有放错位置的文件`,
+        );
+        return;
+      }
+      const sample = preview.moved
+        .slice(0, 8)
+        .map((m) => `${m.name} → ${m.to_category}`)
+        .join("\n");
+      const more =
+        preview.moved_count > 8 ? `\n…等共 ${preview.moved_count} 个文件` : "";
+      const scope = category === "all" ? "全库" : `「${category}」`;
+      if (
+        !confirm(
+          `在${scope}中发现 ${preview.moved_count} 个文件放错了分类，是否移动到正确文件夹？\n\n${sample}${more}`,
+        )
+      ) {
+        return;
+      }
+      const result = await invoke<ReclassifyResult>("reclassify_misplaced_files", {
+        category: category === "all" ? "all" : category,
+        dryRun: false,
+      });
+      const fail = result.failed.length;
+      setMessage(
+        fail > 0
+          ? `已整理 ${result.moved_count} 个文件，${fail} 个失败`
+          : `已整理 ${result.moved_count} 个文件到正确分类`,
+      );
+      await refresh();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const openFile = async (path: string) => {
     setError("");
@@ -253,6 +326,78 @@ export function LibraryView({ category }: Props) {
     }
   };
 
+  const runBatchOp = async (
+    label: string,
+    invokeFn: () => Promise<BatchOperationResult>,
+  ) => {
+    setLoading(true);
+    setError("");
+    setMessage("");
+    try {
+      const result = await invokeFn();
+      const fail = result.failed.length;
+      setMessage(
+        fail > 0
+          ? `${label} ${result.success_count} 个，${fail} 个失败`
+          : `${label} ${result.success_count} 个`,
+      );
+      selection.clear();
+      await refresh();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmBatchDelete = () => {
+    if (selectedFiles.length === 0) return;
+    void runBatchOp("已删除", () =>
+      invoke<BatchOperationResult>("batch_delete_library_files", {
+        paths: selectedFiles.map((f) => f.path),
+      }),
+    );
+    setBatchDeleteOpen(false);
+  };
+
+  const confirmBatchMove = (target: LibraryMoveTarget) => {
+    if (selectedFiles.length === 0) return;
+    void runBatchOp(`已移动到「${target}」`, () =>
+      invoke<BatchOperationResult>("batch_move_to_category", {
+        paths: selectedFiles.map((f) => f.path),
+        targetCategory: target,
+      }),
+    );
+    setBatchMoveOpen(false);
+  };
+
+  const batchRestore = () => {
+    if (selectedFiles.length === 0) return;
+    if (
+      !confirm(`确定将选中的 ${selectedFiles.length} 个文件还原到原位置（无记录则还原到桌面）？`)
+    ) {
+      return;
+    }
+    void runBatchOp("已还原", () =>
+      invoke<BatchOperationResult>("batch_restore_files", {
+        paths: selectedFiles.map((f) => f.path),
+      }),
+    );
+  };
+
+  const onToggleSelect = (
+    file: LibraryFile,
+    index: number,
+    shiftKey: boolean,
+    ctrlKey: boolean,
+  ) => {
+    if (shiftKey) {
+      selection.handleSelect(visiblePaths, file.path, index, true, ctrlKey);
+    } else {
+      selection.toggleOne(file.path, index);
+    }
+  };
+
   return (
     <>
       {importModal && (
@@ -282,11 +427,27 @@ export function LibraryView({ category }: Props) {
       )}
 
       {previewFile && (
-        <ImagePreviewModal
+        <FilePreviewModal
           file={previewFile}
           onOpen={openFile}
           onLocate={showInFolder}
           onClose={() => setPreviewFile(null)}
+        />
+      )}
+
+      {batchDeleteOpen && (
+        <BatchDeleteModal
+          files={selectedFiles}
+          onConfirm={confirmBatchDelete}
+          onCancel={() => setBatchDeleteOpen(false)}
+        />
+      )}
+
+      {batchMoveOpen && (
+        <BatchMoveModal
+          files={selectedFiles}
+          onConfirm={confirmBatchMove}
+          onCancel={() => setBatchMoveOpen(false)}
         />
       )}
 
@@ -314,6 +475,21 @@ export function LibraryView({ category }: Props) {
           <button type="button" className="btn btn-ghost" onClick={importDownloads} disabled={loading}>
             <IconDownload size={16} />
             下载
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => void reclassifyMisplaced()}
+            disabled={loading}
+            title={
+              misplacedCount > 0
+                ? `发现 ${misplacedCount} 个可能放错分类的文件`
+                : "扫描并移动放错分类的文件"
+            }
+          >
+            <IconScan size={16} />
+            {reclassifyLabel}
+            {misplacedCount > 0 ? ` (${misplacedCount})` : ""}
           </button>
           <button
             type="button"
@@ -405,21 +581,48 @@ export function LibraryView({ category }: Props) {
           </div>
         )}
 
+        {filteredFiles.length > 0 && (
+          <BatchToolbar
+            totalCount={filteredFiles.length}
+            selectedCount={selection.selectedCount}
+            disabled={loading}
+            onSelectAll={() => selection.selectAll(visiblePaths)}
+            onInvert={() => selection.invert(visiblePaths)}
+            onClear={selection.clear}
+            onMove={() => setBatchMoveOpen(true)}
+            onRestore={batchRestore}
+            onDelete={() => setBatchDeleteOpen(true)}
+          />
+        )}
+
         {filteredFiles.length > 0 && isImageGrid ? (
           <ImageGridView
             files={filteredFiles}
             previewPath={previewFile?.path ?? null}
+            batchSelected={selection.selected}
             onPreview={setPreviewFile}
             onOpen={openFile}
+            onToggleSelect={onToggleSelect}
           />
         ) : filteredFiles.length > 0 ? (
           <div className="file-list">
-            {filteredFiles.map((f) => (
+            {filteredFiles.map((f, index) => (
               <div
                 key={f.path}
-                className="file-item"
+                className={`file-item ${selection.isSelected(f.path) ? "batch-selected" : ""}`}
                 onDoubleClick={() => openFile(f.path)}
               >
+                <label className="file-check" title="选择">
+                  <input
+                    type="checkbox"
+                    checked={selection.isSelected(f.path)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onToggleSelect(f, index, e.shiftKey, e.ctrlKey || e.metaKey);
+                    }}
+                  />
+                </label>
                 <div className={`file-icon-wrap ${fileTone(f.category, f.name)}`}>
                   {fileIcon(f.category, f.name)}
                 </div>
@@ -428,7 +631,7 @@ export function LibraryView({ category }: Props) {
                     type="button"
                     className="file-name"
                     title={f.path}
-                    onClick={() => openFile(f.path)}
+                    onClick={() => (canPreview(f) ? setPreviewFile(f) : void openFile(f.path))}
                   >
                     {f.name}
                   </button>
@@ -436,11 +639,26 @@ export function LibraryView({ category }: Props) {
                     <span className={`category-pill ${fileTone(f.category, f.name)}`}>
                       {fileTypeLabel(f.category, f.name)}
                     </span>
+                    {isMisplacedInCategory(f) && (
+                      <span className="category-pill category-pill-warn" title="按扩展名应归入其他分类">
+                        应为 {inferLibraryCategory(f.name)}
+                      </span>
+                    )}
                     <span>{formatBytes(f.size)}</span>
                     <span>{formatDate(f.modified)}</span>
                   </div>
                 </div>
                 <div className="file-actions">
+                  {canPreview(f) && (
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      title="预览"
+                      onClick={() => setPreviewFile(f)}
+                    >
+                      <IconEye size={16} />
+                    </button>
+                  )}
                   <button type="button" className="icon-btn" title="打开" onClick={() => openFile(f.path)}>
                     <IconOpen size={16} />
                   </button>

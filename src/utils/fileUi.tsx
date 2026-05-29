@@ -26,6 +26,35 @@ export function getExtension(fileName: string): string {
   return fileName.slice(dot + 1).toLowerCase();
 }
 
+/** 按扩展名推断应收纳的分类（与 Rust classify_extension 一致） */
+export function inferLibraryCategory(fileName: string): string {
+  const ext = getExtension(fileName);
+  if (!ext) return "其他";
+  if (["jpg", "jpeg", "png", "gif", "webp", "bmp", "heic", "heif", "svg", "ico", "tif", "tiff", "raw", "arw", "cr2", "nef"].includes(ext)) {
+    return "图片";
+  }
+  if (["mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "m4v", "mpeg", "mpg", "3gp"].includes(ext)) {
+    return "视频";
+  }
+  if (["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "md", "rtf", "odt", "ods", "odp", "csv", "pages", "wps", "et", "dps"].includes(ext)) {
+    return "文档";
+  }
+  if (["mp3", "wav", "flac", "aac", "ogg", "m4a", "wma", "ape", "opus"].includes(ext)) {
+    return "音频";
+  }
+  if (["zip", "rar", "7z", "tar", "gz", "bz2", "xz", "iso"].includes(ext)) {
+    return "压缩包";
+  }
+  if (["exe", "msi", "msix", "dmg", "apk"].includes(ext)) {
+    return "安装包";
+  }
+  return "其他";
+}
+
+export function isMisplacedInCategory(file: { category: string; name: string }): boolean {
+  return inferLibraryCategory(file.name) !== file.category;
+}
+
 export function getDocVariant(ext: string): DocVariant {
   switch (ext) {
     case "pdf":

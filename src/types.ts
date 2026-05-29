@@ -88,3 +88,41 @@ export interface SetLibraryRootResult {
   migrated_files: number;
   message: string;
 }
+
+export interface ReclassifyMove {
+  name: string;
+  from_category: string;
+  to_category: string;
+}
+
+export interface ReclassifyResult {
+  moved_count: number;
+  already_correct: number;
+  moved: ReclassifyMove[];
+  failed: ImportFailure[];
+}
+
+export interface TextPreview {
+  content: string;
+  truncated: boolean;
+  byte_count: number;
+}
+
+export interface BatchOperationResult {
+  success_count: number;
+  failed: ImportFailure[];
+}
+
+/** 资料库内可移动目标分类（不含「全部」） */
+export const LIBRARY_MOVE_TARGETS = [
+  "收件箱",
+  "图片",
+  "视频",
+  "文档",
+  "音频",
+  "压缩包",
+  "安装包",
+  "其他",
+] as const;
+
+export type LibraryMoveTarget = (typeof LIBRARY_MOVE_TARGETS)[number];

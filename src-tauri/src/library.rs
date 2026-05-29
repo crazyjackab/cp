@@ -72,6 +72,21 @@ pub struct PendingImportFile {
     pub target_category: String,
 }
 
+#[derive(Serialize, Clone)]
+pub struct ReclassifyMove {
+    pub name: String,
+    pub from_category: String,
+    pub to_category: String,
+}
+
+#[derive(Serialize)]
+pub struct ReclassifyResult {
+    pub moved_count: u32,
+    pub already_correct: u32,
+    pub moved: Vec<ReclassifyMove>,
+    pub failed: Vec<ImportFailure>,
+}
+
 pub fn classify_extension(ext: &str) -> &'static str {
     let ext = ext.to_lowercase();
     let ext = ext.as_str();
@@ -307,6 +322,98 @@ pub fn delete_library_file(path: &str) -> Result<(), String> {
     import_log::remove_record(&src);
 
     Ok(())
+}
+
+#[derive(Serialize)]
+pub struct BatchOperationResult {
+    pub success_count: u32,
+    pub failed: Vec<ImportFailure>,
+}
+
+pub fn move_file_to_category(path: &str, target_category: &str) -> Result<String, String> {
+    if !CATEGORIES.contains(&target_category) {
+        return Err(format!("未知分类: {target_category}"));
+    }
+
+    let root = ensure_library()?;
+    let src = PathBuf::from(path);
+    if !src.is_file() {
+        return Err("资料库中找不到该文件".to_string());
+    }
+
+    let file_name = src
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| "无效文件名".to_string())?;
+
+    let dest_dir = root.join(target_category);
+    fs::create_dir_all(&dest_dir).map_err(|e| format!("创建分类目录失败: {e}"))?;
+
+    if src.parent() == Some(dest_dir.as_path()) {
+        return Ok(src.to_string_lossy().into_owned());
+    }
+
+    let dest = unique_dest_path(&dest_dir, file_name);
+    move_file(&src, &dest)?;
+    import_log::update_path(&src, &dest);
+    Ok(dest.to_string_lossy().into_owned())
+}
+
+pub fn batch_delete_library_files(paths: Vec<String>) -> Result<BatchOperationResult, String> {
+    if paths.is_empty() {
+        return Err("请选择至少一个文件".to_string());
+    }
+    let mut success_count = 0u32;
+    let mut failed = Vec::new();
+    for path in paths {
+        match delete_library_file(&path) {
+            Ok(()) => success_count += 1,
+            Err(e) => failed.push(ImportFailure { path, reason: e }),
+        }
+    }
+    Ok(BatchOperationResult {
+        success_count,
+        failed,
+    })
+}
+
+pub fn batch_restore_files(paths: Vec<String>) -> Result<BatchOperationResult, String> {
+    if paths.is_empty() {
+        return Err("请选择至少一个文件".to_string());
+    }
+    let mut success_count = 0u32;
+    let mut failed = Vec::new();
+    for path in paths {
+        match restore_file(&path) {
+            Ok(_) => success_count += 1,
+            Err(e) => failed.push(ImportFailure { path, reason: e }),
+        }
+    }
+    Ok(BatchOperationResult {
+        success_count,
+        failed,
+    })
+}
+
+pub fn batch_move_to_category(
+    paths: Vec<String>,
+    target_category: String,
+) -> Result<BatchOperationResult, String> {
+    if paths.is_empty() {
+        return Err("请选择至少一个文件".to_string());
+    }
+    let mut success_count = 0u32;
+    let mut failed = Vec::new();
+    for path in paths {
+        match move_file_to_category(&path, &target_category) {
+            Ok(_) => success_count += 1,
+            Err(e) => failed.push(ImportFailure { path, reason: e }),
+        }
+    }
+    Ok(BatchOperationResult {
+        success_count,
+        failed,
+    })
 }
 
 fn expand_paths_to_files(paths: Vec<String>) -> Vec<PathBuf> {
@@ -649,5 +756,90 @@ pub fn set_library_root(new_root: String, migrate: bool) -> Result<config::SetLi
         library_root: new_root,
         migrated_files,
         message,
+    })
+}
+
+fn categories_to_scan(category: Option<String>) -> Result<Vec<String>, String> {
+    match category.as_deref() {
+        None | Some("all") | Some("全部") => Ok(CATEGORIES.iter().map(|c| (*c).to_string()).collect()),
+        Some(c) if CATEGORIES.contains(&c) => Ok(vec![c.to_string()]),
+        Some(c) => Err(format!("未知分类: {c}")),
+    }
+}
+
+pub fn reclassify_misplaced(category: Option<String>, dry_run: bool) -> Result<ReclassifyResult, String> {
+    let root = ensure_library()?;
+    let cats = categories_to_scan(category)?;
+
+    let mut moved = Vec::new();
+    let mut failed = Vec::new();
+    let mut moved_count = 0u32;
+    let mut already_correct = 0u32;
+
+    for cat in cats {
+        let dir = root.join(&cat);
+        if !dir.is_dir() {
+            continue;
+        }
+
+        for entry in WalkDir::new(&dir)
+            .min_depth(1)
+            .max_depth(5)
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_file())
+        {
+            let src = entry.path();
+            let file_name = src
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("");
+
+            if should_skip_desktop_file(file_name) {
+                continue;
+            }
+
+            let expected = classify_path(src);
+            if expected == cat.as_str() {
+                already_correct += 1;
+                continue;
+            }
+
+            let item = ReclassifyMove {
+                name: file_name.to_string(),
+                from_category: cat.clone(),
+                to_category: expected.to_string(),
+            };
+
+            if dry_run {
+                moved.push(item);
+                moved_count += 1;
+                continue;
+            }
+
+            let dest_dir = root.join(expected);
+            fs::create_dir_all(&dest_dir)
+                .map_err(|e| format!("创建分类目录「{expected}」失败: {e}"))?;
+            let dest = unique_dest_path(&dest_dir, file_name);
+
+            match move_file(src, &dest) {
+                Ok(()) => {
+                    import_log::update_path(src, &dest);
+                    moved.push(item);
+                    moved_count += 1;
+                }
+                Err(e) => failed.push(ImportFailure {
+                    path: src.to_string_lossy().into_owned(),
+                    reason: e,
+                }),
+            }
+        }
+    }
+
+    Ok(ReclassifyResult {
+        moved_count,
+        already_correct,
+        moved,
+        failed,
     })
 }

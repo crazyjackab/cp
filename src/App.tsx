@@ -73,9 +73,11 @@ function App() {
 
       <div className="main">
         <UpdateBanner />
-        {isLibrary && <LibraryView category={nav as LibraryCategory} />}
-        {nav === "overview" && <OverviewView />}
-        {nav === "settings" && <SettingsView />}
+        <div key={nav} className="view-shell">
+          {isLibrary && <LibraryView category={nav as LibraryCategory} />}
+          {nav === "overview" && <OverviewView />}
+          {nav === "settings" && <SettingsView />}
+        </div>
       </div>
     </div>
   );
