@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { TextPreview } from "../types";
+import { reportError } from "../utils/errors";
 
 export function useTextPreview(path: string, enabled = true) {
   const [data, setData] = useState<TextPreview | null>(null);
@@ -31,6 +32,7 @@ export function useTextPreview(path: string, enabled = true) {
         if (!cancelled) {
           setFailed(true);
           setError(String(e));
+          reportError("读取文本预览", e, { warnOnly: true });
         }
       })
       .finally(() => {

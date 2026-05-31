@@ -2,7 +2,7 @@ use std::path::Path;
 
 #[tauri::command]
 pub fn open_folder(path: String) -> Result<(), String> {
-    let p = Path::new(&path);
+    let p = Path::new(path.trim());
     if !p.exists() {
         return Err(format!("路径不存在: {path}"));
     }
@@ -14,7 +14,7 @@ pub fn open_folder(path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn open_file(path: String) -> Result<(), String> {
-    let p = Path::new(&path);
+    let p = Path::new(path.trim());
     if !p.exists() {
         return Err(format!("文件不存在: {path}"));
     }
@@ -27,30 +27,14 @@ pub fn open_file(path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub fn show_file_in_folder(path: String) -> Result<(), String> {
-    let p = Path::new(&path);
+    let trimmed = path.trim();
+    let p = Path::new(trimmed);
     if !p.exists() {
-        return Err(format!("文件不存在: {path}"));
+        return Err(format!("路径不存在: {trimmed}"));
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        let canon = p
-            .canonicalize()
-            .map_err(|e| format!("路径无效: {e}"))?;
-        let arg = format!("/select,\"{}\"", canon.display());
-        std::process::Command::new("explorer")
-            .arg(arg)
-            .spawn()
-            .map_err(|e| format!("无法在资源管理器中显示: {e}"))?;
-        return Ok(());
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        if let Some(parent) = p.parent() {
-            open::that(parent).map_err(|e| format!("无法打开所在文件夹: {e}"))?;
-        }
-    }
-
-    Ok(())
+    // 使用 Shell API（SHOpenFolderAndSelectItems）精确定位并选中文件，
+    // 避免 explorer /select 与 canonicalize 的 \\?\ 前缀导致定位偏移。
+    tauri_plugin_opener::reveal_item_in_dir(p)
+        .map_err(|e| format!("无法在资源管理器中显示: {e}"))
 }

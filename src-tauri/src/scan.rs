@@ -36,6 +36,11 @@ pub struct ScanResult {
     pub largest_dirs: Vec<DirStat>,
 }
 
+pub struct ScanProgress {
+    pub processed: u64,
+    pub message: String,
+}
+
 fn should_skip(entry: &walkdir::DirEntry) -> bool {
     if entry.file_type().is_dir() {
         if let Some(name) = entry.file_name().to_str() {
@@ -55,6 +60,13 @@ fn normalize_extension(path: &Path) -> String {
 }
 
 pub fn scan_directory(root: &str) -> Result<ScanResult, String> {
+    scan_directory_with_progress(root, |_| Ok(()))
+}
+
+pub fn scan_directory_with_progress<F>(root: &str, mut progress: F) -> Result<ScanResult, String>
+where
+    F: FnMut(ScanProgress) -> Result<(), String>,
+{
     let root_path = PathBuf::from(root);
     if !root_path.exists() {
         return Err(format!("路径不存在: {root}"));
@@ -69,6 +81,11 @@ pub fn scan_directory(root: &str) -> Result<ScanResult, String> {
     let mut by_extension: HashMap<String, (u64, u64)> = HashMap::new();
     let mut dir_bytes: HashMap<PathBuf, (u64, u64)> = HashMap::new();
 
+    progress(ScanProgress {
+        processed: 0,
+        message: "准备扫描目录".to_string(),
+    })?;
+
     for entry in WalkDir::new(&root_path)
         .follow_links(false)
         .into_iter()
@@ -81,6 +98,11 @@ pub fn scan_directory(root: &str) -> Result<ScanResult, String> {
             continue;
         }
 
+        progress(ScanProgress {
+            processed: file_count,
+            message: path.to_string_lossy().into_owned(),
+        })?;
+
         if entry.file_type().is_dir() {
             dir_count += 1;
             continue;
@@ -90,7 +112,9 @@ pub fn scan_directory(root: &str) -> Result<ScanResult, String> {
             continue;
         }
 
-        let meta = entry.metadata().map_err(|e| format!("读取文件元数据失败: {e}"))?;
+        let meta = entry
+            .metadata()
+            .map_err(|e| format!("读取文件元数据失败: {e}"))?;
         let size = meta.len();
         file_count += 1;
         total_bytes += size;
@@ -132,6 +156,11 @@ pub fn scan_directory(root: &str) -> Result<ScanResult, String> {
         .collect();
     largest_dirs.sort_by(|a, b| b.bytes.cmp(&a.bytes));
     largest_dirs.truncate(15);
+
+    progress(ScanProgress {
+        processed: file_count,
+        message: "扫描完成".to_string(),
+    })?;
 
     Ok(ScanResult {
         root: root_path.to_string_lossy().into_owned(),

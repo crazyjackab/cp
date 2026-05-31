@@ -50,13 +50,7 @@ export function useFileSelection() {
   }, []);
 
   const handleSelect = useCallback(
-    (
-      paths: string[],
-      path: string,
-      index: number,
-      shiftKey: boolean,
-      ctrlOrMeta: boolean,
-    ) => {
+    (paths: string[], path: string, index: number, shiftKey: boolean, ctrlOrMeta: boolean) => {
       if (shiftKey && anchorIndexRef.current !== null) {
         selectRange(paths, anchorIndexRef.current, index);
         return;
@@ -71,10 +65,7 @@ export function useFileSelection() {
     [selectRange, toggleOne],
   );
 
-  const selectedPaths = useCallback(
-    () => Array.from(selected),
-    [selected],
-  );
+  const selectedPaths = useCallback(() => Array.from(selected), [selected]);
 
   return {
     selected,

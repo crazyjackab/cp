@@ -32,7 +32,13 @@ fn cache_path(source: &Path, modified: u64, max_size: u32) -> Result<PathBuf, St
         .unwrap_or("image");
     let safe = name
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '.' || c == '-' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '.' || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect::<String>();
     let key = format!("{safe}_{modified}_{max_size}.jpg");
     Ok(thumbnail_cache_dir()?.join(key))
@@ -52,11 +58,8 @@ fn resize_image(img: image::DynamicImage, max_size: u32) -> image::DynamicImage 
 
 fn render_jpeg(img: image::DynamicImage) -> Result<Vec<u8>, String> {
     let mut buf = Vec::new();
-    img.write_to(
-        &mut Cursor::new(&mut buf),
-        image::ImageFormat::Jpeg,
-    )
-    .map_err(|e| format!("生成缩略图失败: {e}"))?;
+    img.write_to(&mut Cursor::new(&mut buf), image::ImageFormat::Jpeg)
+        .map_err(|e| format!("生成缩略图失败: {e}"))?;
     Ok(buf)
 }
 
@@ -77,7 +80,8 @@ pub fn get_image_data_url(path: &str, max_size: u32) -> Result<String, String> {
         }
     }
 
-    let img = image::open(&source).map_err(|e| format!("无法解码图片（可能是不支持的格式）: {e}"))?;
+    let img =
+        image::open(&source).map_err(|e| format!("无法解码图片（可能是不支持的格式）: {e}"))?;
     let thumb = resize_image(img, max_size);
     let bytes = render_jpeg(thumb)?;
 

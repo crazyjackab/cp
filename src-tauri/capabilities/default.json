@@ -9,13 +9,26 @@
     "opener:default",
     {
       "identifier": "opener:allow-open-path",
-      "allow": [{ "path": "D:/FileManager/**" }, { "path": "$HOME/**" }]
+      "allow": [
+        { "path": "C:/**" },
+        { "path": "D:/**" },
+        { "path": "E:/**" },
+        { "path": "F:/**" },
+        { "path": "$HOME/**" }
+      ]
     },
     {
       "identifier": "opener:allow-reveal-item-in-dir",
-      "allow": [{ "path": "D:/FileManager/**" }, { "path": "$HOME/**" }]
+      "allow": [
+        { "path": "C:/**" },
+        { "path": "D:/**" },
+        { "path": "E:/**" },
+        { "path": "F:/**" },
+        { "path": "$HOME/**" }
+      ]
     },
     "updater:default",
+    "notification:default",
     "process:default"
   ]
 }

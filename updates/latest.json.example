@@ -1,11 +1,11 @@
 {
-  "version": "0.2.0",
-  "notes": "示例更新说明：修复若干问题并优化体验。",
-  "pub_date": "2026-05-24T12:00:00Z",
+  "version": "0.3.0",
+  "notes": "示例更新说明：填写本次版本的更新内容摘要。",
+  "pub_date": "2026-05-31T12:00:00Z",
   "platforms": {
     "windows-x86_64": {
       "signature": "将构建产物同目录下的 .sig 文件内容粘贴到这里",
-      "url": "https://github.com/crazyjackab/cp/releases/download/v0.2.0/File.Manager_0.2.0_x64-setup.exe"
+      "url": "https://github.com/crazyjackab/cp/releases/download/v0.3.0/File.Manager_0.3.0_x64-setup.exe"
     }
   }
 }

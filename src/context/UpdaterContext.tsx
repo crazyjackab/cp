@@ -18,6 +18,8 @@ import {
   saveUpdaterSettings,
   type UpdaterSettings,
 } from "../settings/updater";
+import { reportError } from "../utils/errors";
+import { notifyWhenInactive } from "../utils/notifications";
 
 export type UpdaterPhase =
   | "idle"
@@ -54,9 +56,7 @@ function formatUpdaterError(error: unknown): string {
 }
 
 export function UpdaterProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<UpdaterSettings>(() =>
-    loadUpdaterSettings()
-  );
+  const [settings, setSettings] = useState<UpdaterSettings>(() => loadUpdaterSettings());
   const [phase, setPhase] = useState<UpdaterPhase>("idle");
   const [currentVersion, setCurrentVersion] = useState("0.1.0");
   const [availableUpdate, setAvailableUpdate] = useState<Update | null>(null);
@@ -68,7 +68,7 @@ export function UpdaterProvider({ children }: { children: ReactNode }) {
     if (!isTauri()) return;
     getVersion()
       .then(setCurrentVersion)
-      .catch(() => undefined);
+      .catch((e) => reportError("读取应用版本", e, { warnOnly: true }));
   }, []);
 
   const setAutoCheckOnStartup = useCallback((enabled: boolean) => {
@@ -79,46 +79,49 @@ export function UpdaterProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const checkForUpdate = useCallback(
-    async (options?: { silent?: boolean }) => {
-      if (!isTauri()) {
-        setPhase("error");
-        setMessage("自动更新仅在桌面应用中可用。");
-        return;
-      }
+  const checkForUpdate = useCallback(async (options?: { silent?: boolean }) => {
+    if (!isTauri()) {
+      setPhase("error");
+      setMessage("自动更新仅在桌面应用中可用。");
+      return;
+    }
 
-      if (import.meta.env.DEV) {
-        setPhase("error");
-        setMessage("开发模式下不支持检查更新，请使用正式安装包测试。");
-        return;
-      }
+    if (import.meta.env.DEV) {
+      setPhase("error");
+      setMessage("开发模式下不支持检查更新，请使用正式安装包测试。");
+      return;
+    }
 
-      setPhase("checking");
-      setProgress(null);
-      if (!options?.silent) {
-        setMessage("正在检查更新…");
-      }
+    setPhase("checking");
+    setProgress(null);
+    if (!options?.silent) {
+      setMessage("正在检查更新…");
+    }
 
-      try {
-        const update = await check({ timeout: 30000 });
-        if (!update) {
-          setAvailableUpdate(null);
-          setPhase("idle");
-          setMessage(options?.silent ? "" : "当前已是最新版本。");
-          return;
-        }
-
-        setAvailableUpdate(update);
-        setPhase("available");
-        setMessage(`发现新版本 v${update.version}`);
-      } catch (error) {
+    try {
+      const update = await check({ timeout: 30000 });
+      if (!update) {
         setAvailableUpdate(null);
-        setPhase("error");
-        setMessage(formatUpdaterError(error));
+        setPhase("idle");
+        setMessage(options?.silent ? "" : "当前已是最新版本。");
+        return;
       }
-    },
-    []
-  );
+
+      setAvailableUpdate(update);
+      setPhase("available");
+      setMessage(`发现新版本 v${update.version}`);
+      if (options?.silent) {
+        void notifyWhenInactive(
+          "File Manager 有可用更新",
+          `新版本 v${update.version} 已发布，打开应用即可更新。`,
+        );
+      }
+    } catch (error) {
+      setAvailableUpdate(null);
+      setPhase("error");
+      setMessage(formatUpdaterError(error));
+    }
+  }, []);
 
   const downloadAndInstall = useCallback(async () => {
     if (!availableUpdate) return;
@@ -196,12 +199,10 @@ export function UpdaterProvider({ children }: { children: ReactNode }) {
       checkForUpdate,
       downloadAndInstall,
       dismissUpdate,
-    ]
+    ],
   );
 
-  return (
-    <UpdaterContext.Provider value={value}>{children}</UpdaterContext.Provider>
-  );
+  return <UpdaterContext.Provider value={value}>{children}</UpdaterContext.Provider>;
 }
 
 export function useUpdater(): UpdaterContextValue {

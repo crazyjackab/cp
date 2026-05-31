@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import type { LibraryFile } from "../../types";
+import { reportError } from "../../utils/errors";
 import { IconVideo } from "../icons";
 
 interface Props {
@@ -27,7 +28,8 @@ export function VideoPreviewContent({ file }: Props) {
   const src = useMemo(() => {
     try {
       return convertFileSrc(file.path);
-    } catch {
+    } catch (error) {
+      reportError("转换视频预览路径", error, { warnOnly: true });
       return "";
     }
   }, [file.path]);
@@ -36,6 +38,16 @@ export function VideoPreviewContent({ file }: Props) {
     setFailed(false);
     setDuration(null);
     setResolution(null);
+  }, [file.path]);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    return () => {
+      if (!el) return;
+      el.pause();
+      el.removeAttribute("src");
+      el.load();
+    };
   }, [file.path]);
 
   const onLoadedMetadata = () => {
@@ -60,6 +72,7 @@ export function VideoPreviewContent({ file }: Props) {
   return (
     <div className="file-preview-video-wrap">
       <video
+        key={file.path}
         ref={videoRef}
         className="file-preview-video"
         src={src}

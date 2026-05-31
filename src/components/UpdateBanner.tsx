@@ -1,14 +1,8 @@
 import { useUpdater } from "../context/UpdaterContext";
 
 export function UpdateBanner() {
-  const {
-    phase,
-    availableUpdate,
-    progress,
-    message,
-    downloadAndInstall,
-    dismissUpdate,
-  } = useUpdater();
+  const { phase, availableUpdate, progress, message, downloadAndInstall, dismissUpdate } =
+    useUpdater();
 
   if (phase !== "available" && phase !== "downloading" && phase !== "installing") {
     return null;
@@ -25,10 +19,7 @@ export function UpdateBanner() {
         ) : null}
         {busy && progress !== null ? (
           <span className="update-progress">
-            <span
-              className="update-progress-bar"
-              style={{ width: `${progress}%` }}
-            />
+            <span className="update-progress-bar" style={{ width: `${progress}%` }} />
             <span className="update-progress-label">{progress}%</span>
           </span>
         ) : null}

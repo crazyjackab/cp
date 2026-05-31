@@ -1,37 +1,69 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import type { ScanResult } from "../types";
+import { TaskProgressPanel } from "./TaskProgressPanel";
 import { formatBytes, formatNumber } from "../utils";
+import { useOperationToast } from "../hooks/useOperationToast";
+import { createFinishedTaskRegistry, useBackgroundTask } from "../hooks/useBackgroundTask";
+import { reportError, reportToastError } from "../utils/errors";
 
 export function OverviewView() {
+  const { toastError, toastInfo } = useOperationToast();
   const [rootPath, setRootPath] = useState("");
   const [quickPaths, setQuickPaths] = useState<[string, string][]>([]);
   const [scan, setScan] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const finishedTaskIdsRef = useRef(createFinishedTaskRegistry());
+
+  const { taskId, progress, isRunning, assignTask, resetProgress, cancelTask } =
+    useBackgroundTask<ScanResult>({
+      kind: "scan-directory",
+      listenContext: "订阅总览扫描任务",
+      finishedTaskIdsRef,
+      handlers: {
+        onCompleted: (payload) => {
+          if (payload.result) {
+            setScan(payload.result);
+            setRootPath(payload.result.root);
+          }
+          setLoading(false);
+        },
+        onFailed: (payload) => {
+          toastError(payload.message);
+          setScan(null);
+          setLoading(false);
+        },
+        onCancelled: () => {
+          toastInfo("扫描已取消");
+          setLoading(false);
+        },
+      },
+    });
 
   useEffect(() => {
     invoke<[string, string][]>("get_quick_paths")
       .then(setQuickPaths)
-      .catch(() => {});
-  }, []);
+      .catch((e) => reportError("加载快捷路径", e, { toast: toastError }));
+  }, [toastError]);
 
-  const runScan = useCallback(async (path: string) => {
-    if (!path) return;
-    setLoading(true);
-    setError("");
-    try {
-      const result = await invoke<ScanResult>("scan_directory", { path });
-      setScan(result);
-      setRootPath(result.root);
-    } catch (e) {
-      setError(String(e));
-      setScan(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const runScan = useCallback(
+    async (path: string) => {
+      if (!path) return;
+      setLoading(true);
+      resetProgress();
+      try {
+        const nextTaskId = await invoke<string>("start_scan_directory_task", { path });
+        if (!assignTask(nextTaskId)) return;
+        setRootPath(path);
+      } catch (e) {
+        reportToastError(toastError, "启动目录扫描", e);
+        setScan(null);
+        setLoading(false);
+      }
+    },
+    [assignTask, resetProgress, toastError],
+  );
 
   const pickFolder = async () => {
     const selected = await open({
@@ -81,14 +113,25 @@ export function OverviewView() {
           >
             {loading ? "扫描中…" : "开始扫描"}
           </button>
+          {loading && taskId && (
+            <button type="button" className="btn btn-ghost" onClick={() => void cancelTask()}>
+              取消
+            </button>
+          )}
         </div>
       </header>
 
       <div className="content">
-        {error && <div className="error">{error}</div>}
-        {loading && <div className="loading">正在扫描，请稍候…</div>}
+        {isRunning && (
+          <TaskProgressPanel
+            message={progress?.message || "正在扫描，请稍候…"}
+            processed={progress?.processed}
+            onCancel={() => void cancelTask()}
+            cancelLabel="取消扫描"
+          />
+        )}
 
-        {!loading && !scan && !error && (
+        {!loading && !scan && (
           <div className="empty">用于了解某个文件夹的占用情况，与资料库收纳互补。</div>
         )}
 

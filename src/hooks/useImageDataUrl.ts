@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { reportError } from "../utils/errors";
 
 export function useImageDataUrl(path: string, maxSize: number, enabled = true) {
   const [url, setUrl] = useState<string | null>(null);
@@ -23,7 +24,8 @@ export function useImageDataUrl(path: string, maxSize: number, enabled = true) {
       .then((dataUrl) => {
         if (!cancelled) setUrl(dataUrl);
       })
-      .catch(() => {
+      .catch((e) => {
+        reportError("加载图片预览", e, { warnOnly: true });
         if (!cancelled) setFailed(true);
       })
       .finally(() => {

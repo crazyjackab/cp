@@ -3,6 +3,7 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import * as pdfjsLib from "pdfjs-dist";
 import type { LibraryFile } from "../../types";
 import { IconPdf } from "../icons";
+import { reportError } from "../../utils/errors";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -40,7 +41,8 @@ export function PdfPreviewContent({ file }: Props) {
         setPdfDoc(doc);
         setPageCount(doc.numPages);
       })
-      .catch(() => {
+      .catch((e) => {
+        reportError("加载 PDF", e, { warnOnly: true });
         if (!cancelled) setFailed(true);
       })
       .finally(() => {
@@ -74,7 +76,8 @@ export function PdfPreviewContent({ file }: Props) {
 
         return pdfPage.render({ canvasContext: ctx, viewport: scaled }).promise;
       })
-      .catch(() => {
+      .catch((e) => {
+        reportError("渲染 PDF 页面", e, { warnOnly: true });
         if (!cancelled) setFailed(true);
       });
 

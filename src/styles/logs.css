@@ -1,0 +1,92 @@
+/* Import log view */
+/* Import log */
+.log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.log-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.log-item:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.log-item-missing {
+  background: color-mix(in srgb, var(--surface) 88%, var(--bg));
+}
+
+.log-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.log-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.log-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.log-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.85rem;
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.log-path-grid {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  gap: 0.25rem 0.65rem;
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border);
+}
+
+.log-path-label {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.log-path-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--table-meta);
+  font-size: 0.76rem;
+}
+
+.log-actions {
+  opacity: 1;
+  align-self: center;
+}
+
+.log-actions .icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

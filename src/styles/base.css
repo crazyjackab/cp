@@ -1,0 +1,59 @@
+/* CSS variables, reset, app shell */
+:root,
+[data-theme="dark"] {
+  font-family: "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #e8eaed;
+  background: #0f1117;
+  --text-primary: #e8eaed;
+  --text-on-accent: #ffffff;
+  --bg: #0f1117;
+  --surface: #161922;
+  --surface-2: #1e2230;
+  --surface-hover: #262b3a;
+  --border: #2e3548;
+  --accent: #5b8def;
+  --accent-hover: #7aa3f5;
+  --accent-soft: rgba(91, 141, 239, 0.14);
+  --muted: #8b95a8;
+  --table-header: #9aa3b5;
+  --table-text: #e8eaed;
+  --table-meta: #9aa3b5;
+  --btn-bg: #262b3a;
+  --btn-text: #f0f2f5;
+  --btn-border: #3d4659;
+  --btn-hover-border: var(--accent);
+  --card-shadow: none;
+  --panel-header-bg: transparent;
+  --success: #4ade80;
+  --danger: #f87171;
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --radius-sm: 8px;
+  --sidebar-width: 228px;
+  --panel: var(--surface-2);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+#root {
+  min-height: 100vh;
+  height: 100%;
+}
+
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}

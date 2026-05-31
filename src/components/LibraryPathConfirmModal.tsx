@@ -5,12 +5,7 @@ interface Props {
   onCancel: () => void;
 }
 
-export function LibraryPathConfirmModal({
-  newPath,
-  currentPath,
-  onConfirm,
-  onCancel,
-}: Props) {
+export function LibraryPathConfirmModal({ newPath, currentPath, onConfirm, onCancel }: Props) {
   return (
     <div className="modal-backdrop" role="presentation" onClick={onCancel}>
       <div

@@ -27,9 +27,7 @@ export function BatchMoveModal({ files, onConfirm, onCancel }: Props) {
         </header>
 
         <div className="modal-body-form">
-          <p className="settings-desc">
-            将选中的 {files.length} 个文件移动到目标分类文件夹。
-          </p>
+          <p className="settings-desc">将选中的 {files.length} 个文件移动到目标分类文件夹。</p>
           <div className="batch-category-grid">
             {LIBRARY_MOVE_TARGETS.map((cat) => (
               <button

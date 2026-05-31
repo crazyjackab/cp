@@ -1,0 +1,88 @@
+/* Light theme, accent, font size */
+/* —— 浅色主题（提高对比度） —— */
+[data-theme="light"] {
+  color: #1a2332;
+  --text-primary: #111827;
+  --text-on-accent: #ffffff;
+  --bg: #f3f5f9;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-hover: #eef2f7;
+  --border: #e2e8f0;
+  --muted: #64748b;
+  --table-header: #475569;
+  --table-text: #1e293b;
+  --table-meta: #64748b;
+  --btn-bg: #f8fafc;
+  --btn-text: #334155;
+  --btn-border: #cbd5e1;
+  --btn-hover-border: var(--accent);
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, #ffffff);
+  --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.04);
+  --panel-header-bg: #f8fafc;
+}
+
+[data-theme="light"] .nav-item.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+[data-theme="light"] .page-header,
+[data-theme="light"] .toolbar {
+  background: var(--surface);
+}
+
+[data-theme="light"] .file-name:hover {
+  color: var(--accent);
+}
+
+[data-theme="light"] .app-drop-overlay {
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+}
+
+[data-theme="light"] .app-drop-overlay-inner {
+  box-shadow: 0 12px 32px color-mix(in srgb, #0f172a 12%, transparent);
+}
+
+[data-theme="light"] .toast {
+  background: rgba(52, 211, 153, 0.15);
+  color: #047857;
+}
+
+[data-theme="light"] .error {
+  color: #b91c1c;
+}
+
+/* —— 强调色 —— */
+[data-accent="blue"] {
+  --accent: #5b8def;
+  --accent-hover: #7aa3f5;
+}
+
+[data-accent="green"] {
+  --accent: #34d399;
+  --accent-hover: #6ee7b7;
+}
+
+[data-accent="purple"] {
+  --accent: #a78bfa;
+  --accent-hover: #c4b5fd;
+}
+
+[data-accent="orange"] {
+  --accent: #fb923c;
+  --accent-hover: #fdba74;
+}
+
+/* —— 字号 —— */
+[data-font-size="small"] {
+  font-size: 13px;
+}
+
+[data-font-size="medium"] {
+  font-size: 14px;
+}
+
+[data-font-size="large"] {
+  font-size: 16px;
+}

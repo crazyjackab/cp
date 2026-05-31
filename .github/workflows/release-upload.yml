@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag (e.g. v0.2.0)"
+        description: "Release tag (e.g. v0.3.0)"
         required: true
-        default: "v0.2.0"
+        default: "v0.3.0"
 
 permissions:
   contents: write
@@ -50,10 +50,12 @@ jobs:
           body: |
             ## File Manager ${{ github.event.inputs.tag || github.ref_name }}
 
-            - 库内搜索与筛选（文件名、时间、大小、扩展名）
-            - 图片分类缩略图网格与预览
-            - 设置：资料库路径（迁移/切换）、移动/复制收纳模式
-            - 文档类型颜色区分与 UI 优化
+            - 收藏、标签与错放分类整理
+            - 重复文件检测与批量删除
+            - 操作日志、智能收纳提醒与系统托盘
+            - PDF 预览、后台任务统一进度与 Windows 通知
+            - 库内搜索与筛选、图片缩略图网格
+            - 设置：资料库路径迁移、移动/复制模式、扩展名自定义规则
 
             **安装**：下载 `File Manager_*_x64-setup.exe` 运行。已安装旧版可在应用内 **设置 → 检查更新**。
           files: |

@@ -1,3 +1,5 @@
+import { reportError } from "../utils/errors";
+
 export type ThemeMode = "dark" | "light" | "system";
 export type AccentColor = "blue" | "green" | "purple" | "orange";
 export type FontSize = "small" | "medium" | "large";
@@ -26,7 +28,8 @@ export function loadAppearance(): AppearanceSettings {
       accent: parsed.accent ?? DEFAULT_APPEARANCE.accent,
       fontSize: parsed.fontSize ?? DEFAULT_APPEARANCE.fontSize,
     };
-  } catch {
+  } catch (error) {
+    reportError("读取外观设置", error, { warnOnly: true });
     return { ...DEFAULT_APPEARANCE };
   }
 }
@@ -37,9 +40,7 @@ export function saveAppearance(settings: AppearanceSettings): void {
 
 export function resolveTheme(mode: ThemeMode): "dark" | "light" {
   if (mode === "system") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
   return mode;
 }

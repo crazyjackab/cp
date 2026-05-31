@@ -29,9 +29,7 @@ interface AppearanceContextValue {
 const AppearanceContext = createContext<AppearanceContextValue | null>(null);
 
 export function AppearanceProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<AppearanceSettings>(() =>
-    loadAppearance(),
-  );
+  const [settings, setSettings] = useState<AppearanceSettings>(() => loadAppearance());
 
   const update = useCallback((patch: Partial<AppearanceSettings>) => {
     setSettings((prev) => {
@@ -70,11 +68,7 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
     [settings, update],
   );
 
-  return (
-    <AppearanceContext.Provider value={value}>
-      {children}
-    </AppearanceContext.Provider>
-  );
+  return <AppearanceContext.Provider value={value}>{children}</AppearanceContext.Provider>;
 }
 
 export function useAppearance() {

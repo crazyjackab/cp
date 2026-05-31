@@ -1,3 +1,5 @@
+import { reportError } from "../utils/errors";
+
 const STORAGE_KEY = "file-manager-updater";
 
 export interface UpdaterSettings {
@@ -14,10 +16,10 @@ export function loadUpdaterSettings(): UpdaterSettings {
     if (!raw) return { ...DEFAULT_UPDATER_SETTINGS };
     const parsed = JSON.parse(raw) as Partial<UpdaterSettings>;
     return {
-      autoCheckOnStartup:
-        parsed.autoCheckOnStartup ?? DEFAULT_UPDATER_SETTINGS.autoCheckOnStartup,
+      autoCheckOnStartup: parsed.autoCheckOnStartup ?? DEFAULT_UPDATER_SETTINGS.autoCheckOnStartup,
     };
-  } catch {
+  } catch (error) {
+    reportError("读取更新设置", error, { warnOnly: true });
     return { ...DEFAULT_UPDATER_SETTINGS };
   }
 }
