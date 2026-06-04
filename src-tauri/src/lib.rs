@@ -2,6 +2,7 @@ mod background_task;
 mod config;
 mod debounced_persist;
 mod duplicate;
+mod file_drag;
 mod file_metadata;
 mod import_log;
 mod library;
@@ -586,6 +587,16 @@ fn restore_file(app: tauri::AppHandle, path: String) -> Result<String, String> {
 #[tauri::command]
 fn rename_library_file(path: String, new_name: String) -> Result<String, String> {
     library::rename_library_file(&path, new_name)
+}
+
+#[tauri::command]
+fn save_library_file_as(path: String, destPath: String) -> Result<String, String> {
+    library::save_library_file_as(&path, &destPath)
+}
+
+#[tauri::command]
+fn batch_save_library_files_as(paths: Vec<String>, destDir: String) -> Result<BatchOperationResult, String> {
+    library::batch_save_library_files_as(paths, &destDir)
 }
 
 #[tauri::command]
@@ -1303,6 +1314,8 @@ pub fn run() {
             list_downloads_import_candidates,
             restore_file,
             rename_library_file,
+            save_library_file_as,
+            batch_save_library_files_as,
             create_library_folder,
             delete_library_file,
             get_image_data_url,
@@ -1343,6 +1356,7 @@ pub fn run() {
             open_util::open_file,
             open_util::show_file_in_folder,
             open_util::open_folder,
+            file_drag::start_native_file_drag,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

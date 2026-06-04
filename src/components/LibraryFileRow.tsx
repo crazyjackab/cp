@@ -23,6 +23,7 @@ import {
   IconLocate,
   IconOpen,
   IconRestore,
+  IconSaveAs,
   IconStar,
   IconTag,
   IconTrash,
@@ -51,6 +52,7 @@ export interface LibraryFileRowProps {
   onSetFavorite: (file: LibraryFile, favorite: boolean) => void;
   onEditTags: (file: LibraryFile) => void;
   onRename: (file: LibraryFile) => void;
+  onSaveAs: (file: LibraryFile) => void;
   onDelete: (file: LibraryFile) => void;
   onRestore: (file: LibraryFile) => void;
   onShowInFolder: (path: string) => void;
@@ -74,6 +76,7 @@ export function LibraryFileRow({
   onSetFavorite,
   onEditTags,
   onRename,
+  onSaveAs,
   onDelete,
   onRestore,
   onShowInFolder,
@@ -198,6 +201,9 @@ export function LibraryFileRow({
           onClick={() => onOpenFile(file.path)}
         >
           <IconOpen size={16} />
+        </button>
+        <button type="button" className="icon-btn" title="另存为" onClick={() => onSaveAs(file)}>
+          <IconSaveAs size={16} />
         </button>
         <button
           type="button"

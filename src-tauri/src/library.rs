@@ -711,6 +711,69 @@ pub fn create_library_folder(
     Ok(dest.to_string_lossy().into_owned())
 }
 
+pub fn save_library_file_as(path: &str, dest_path: &str) -> Result<String, String> {
+    let src = validate_library_file_path(path)?;
+    let dest = PathBuf::from(dest_path.trim());
+    if dest.as_os_str().is_empty() {
+        return Err("目标路径无效".to_string());
+    }
+
+    let src_canon = dunce::canonicalize(&src).unwrap_or(src.clone());
+    let dest_canon = if dest.exists() {
+        dunce::canonicalize(&dest).unwrap_or(dest.clone())
+    } else if let (Some(parent), Some(name)) = (dest.parent(), dest.file_name()) {
+        let parent = dunce::canonicalize(parent).unwrap_or_else(|_| parent.to_path_buf());
+        parent.join(name)
+    } else {
+        dest.clone()
+    };
+
+    if src_canon == dest_canon {
+        return Err("目标路径不能与源文件相同".to_string());
+    }
+
+    copy_file(&src, &dest)?;
+    Ok(dest.to_string_lossy().into_owned())
+}
+
+pub fn batch_save_library_files_as(
+    paths: Vec<String>,
+    dest_dir: &str,
+) -> Result<BatchOperationResult, String> {
+    if paths.is_empty() {
+        return Err("请选择至少一个文件".to_string());
+    }
+
+    let dest_dir = PathBuf::from(dest_dir.trim());
+    if !dest_dir.is_dir() {
+        return Err("目标文件夹无效".to_string());
+    }
+
+    let mut success_count = 0u32;
+    let mut failed = Vec::new();
+
+    for path in paths {
+        match (|| {
+            let src = validate_library_file_path(&path)?;
+            let file_name = src
+                .file_name()
+                .and_then(|n| n.to_str())
+                .ok_or_else(|| "无效文件名".to_string())?;
+            let dest = unique_dest_path(&dest_dir, file_name);
+            copy_file(&src, &dest)?;
+            Ok::<(), String>(())
+        })() {
+            Ok(()) => success_count += 1,
+            Err(e) => failed.push(ImportFailure { path, reason: e }),
+        }
+    }
+
+    Ok(BatchOperationResult {
+        success_count,
+        failed,
+    })
+}
+
 pub fn rename_library_file(path: &str, new_name: String) -> Result<String, String> {
     validate_file_name(&new_name)?;
     let new_name = new_name.trim();

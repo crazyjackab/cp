@@ -7,6 +7,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import {
+  isPointerOutsideWindow,
+  startNativeFileDrag,
+} from "../utils/nativeFileDrag";
 import { resolveDropTargetFromClientPoint, type ImportDropTarget } from "../utils/importTarget";
 
 interface SessionOptions {
@@ -41,13 +45,21 @@ interface ProviderProps extends SessionOptions {
 export function InternalFileDragProvider({ children, onHoverChange, onDrop }: ProviderProps) {
   const [dragging, setDragging] = useState(false);
   const pathsRef = useRef<string[]>([]);
+  const nativeDragStartedRef = useRef(false);
+  const captureRef = useRef<{ element: HTMLElement; pointerId: number } | null>(null);
   const onHoverChangeRef = useRef(onHoverChange);
   const onDropRef = useRef(onDrop);
   onHoverChangeRef.current = onHoverChange;
   onDropRef.current = onDrop;
 
   const endSession = useCallback(() => {
+    const capture = captureRef.current;
+    if (capture?.element.hasPointerCapture(capture.pointerId)) {
+      capture.element.releasePointerCapture(capture.pointerId);
+    }
+    captureRef.current = null;
     pathsRef.current = [];
+    nativeDragStartedRef.current = false;
     setDragging(false);
     onHoverChangeRef.current?.(null);
   }, []);
@@ -57,14 +69,30 @@ export function InternalFileDragProvider({ children, onHoverChange, onDrop }: Pr
     event.preventDefault();
     event.stopPropagation();
     pathsRef.current = paths;
+    nativeDragStartedRef.current = false;
     setDragging(true);
-    event.currentTarget.setPointerCapture(event.pointerId);
+    const element = event.currentTarget;
+    if (element instanceof HTMLElement) {
+      captureRef.current = { element, pointerId: event.pointerId };
+      element.setPointerCapture(event.pointerId);
+    }
   }, []);
 
   useEffect(() => {
     if (!dragging) return;
 
     const onPointerMove = (event: PointerEvent) => {
+      const paths = pathsRef.current;
+      if (
+        paths.length > 0 &&
+        !nativeDragStartedRef.current &&
+        isPointerOutsideWindow(event.clientX, event.clientY)
+      ) {
+        nativeDragStartedRef.current = true;
+        endSession();
+        void startNativeFileDrag(paths);
+        return;
+      }
       onHoverChangeRef.current?.(resolveDropTargetFromClientPoint(event.clientX, event.clientY));
     };
 

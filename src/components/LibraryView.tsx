@@ -14,6 +14,7 @@ import {
   type LibraryFilters,
 } from "../utils/libraryFilter";
 import { reportError, reportToastError } from "../utils/errors";
+import { saveLibraryFileAs, saveLibraryFilesAsBatch } from "../utils/saveLibraryFileAs";
 import { createFinishedTaskRegistry } from "../utils/taskProgress";
 import {
   categoryFromFolderPath,
@@ -318,6 +319,36 @@ export function LibraryView({
     }
   };
 
+  const saveAs = async (file: LibraryFile) => {
+    try {
+      const savedPath = await saveLibraryFileAs(file);
+      if (!savedPath) return;
+      const name = savedPath.split(/[/\\]/).pop() ?? savedPath;
+      toastSuccess(`已另存为：${name}`);
+    } catch (e) {
+      reportToastError(toastError, "另存为", e);
+    }
+  };
+
+  const batchSaveAs = async () => {
+    if (selectedFiles.length === 0) return;
+    try {
+      const result = await saveLibraryFilesAsBatch(selectedFiles);
+      if (!result) return;
+      if (result.failed.length === 0) {
+        toastSuccess(`已将 ${result.success_count} 个文件另存到所选文件夹`);
+      } else {
+        toastError(
+          `另存为完成：成功 ${result.success_count} 个，失败 ${result.failed.length} 个`,
+        );
+        reportError("批量另存为", result.failed.map((f) => `${f.path}: ${f.reason}`).join("\n"));
+      }
+      selection.clear();
+    } catch (e) {
+      reportToastError(toastError, "批量另存为", e);
+    }
+  };
+
   const confirmCreateFolder = async (name: string, targetCategory: LibraryMoveTarget) => {
     setNewFolderOpen(false);
     try {
@@ -550,6 +581,7 @@ export function LibraryView({
           onNavigate={handlePreviewNavigate}
           onOpen={openFile}
           onLocate={showInFolder}
+          onSaveAs={saveAs}
           onClose={() => setPreviewFile(null)}
         />
       )}
@@ -672,6 +704,7 @@ export function LibraryView({
         onBatchFavorite={() => void batchSetFavorite(true)}
         onBatchUnfavorite={() => void batchSetFavorite(false)}
         onBatchRestore={batchRestore}
+        onBatchSaveAs={() => void batchSaveAs()}
         onBatchDelete={() => setBatchDeleteOpen(true)}
         previewPath={previewFile?.path ?? null}
         batchSelected={selection.selected}
@@ -682,6 +715,7 @@ export function LibraryView({
         onEditTags={setTagTarget}
         onToggleSelect={onToggleSelect}
         onRename={setRenameTarget}
+        onSaveAs={(file) => void saveAs(file)}
         onDelete={setDeleteTarget}
         onRestore={restoreToOriginal}
         onShowInFolder={showInFolder}

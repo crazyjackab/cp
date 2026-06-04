@@ -2,7 +2,7 @@ import { useCallback, useEffect } from "react";
 import type { LibraryFile } from "../types";
 import { formatBytes } from "../utils";
 import { getPreviewKind } from "../utils/previewKind";
-import { IconChevronRight, IconLocate, IconOpen } from "./icons";
+import { IconChevronRight, IconLocate, IconOpen, IconSaveAs } from "./icons";
 import { ImagePreviewContent } from "./preview/ImagePreviewContent";
 import { PdfPreviewContent } from "./preview/PdfPreviewContent";
 import { TextPreviewContent } from "./preview/TextPreviewContent";
@@ -15,6 +15,7 @@ interface Props {
   onNavigate: (index: number) => void;
   onOpen: (path: string) => void;
   onLocate: (path: string) => void;
+  onSaveAs: (file: LibraryFile) => void;
   onClose: () => void;
 }
 
@@ -45,6 +46,7 @@ export function FilePreviewModal({
   onNavigate,
   onOpen,
   onLocate,
+  onSaveAs,
   onClose,
 }: Props) {
   const canNavigate = files.length > 1;
@@ -144,6 +146,10 @@ export function FilePreviewModal({
             <button type="button" className="btn btn-ghost" onClick={() => onLocate(file.path)}>
               <IconLocate size={16} />
               定位
+            </button>
+            <button type="button" className="btn btn-ghost" onClick={() => onSaveAs(file)}>
+              <IconSaveAs size={16} />
+              另存为
             </button>
             <button type="button" className="btn btn-primary" onClick={() => onOpen(file.path)}>
               <IconOpen size={16} />

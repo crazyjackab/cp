@@ -1,11 +1,11 @@
 ﻿{
-    "version":  "0.3.0",
-    "notes":  "File Manager v0.3.0\n\n- 收藏、标签与错放分类整理\n- 重复文件检测与批量删除\n- 操作日志、智能收纳提醒与系统托盘\n- PDF 预览、后台任务统一进度与 Windows 通知\n- 库内搜索与筛选、图片缩略图网格\n- 设置：资料库路径迁移、移动/复制模式、扩展名自定义规则",
-    "pub_date":  "2026-05-31T13:24:54Z",
+    "version":  "0.3.1",
+    "notes":  "File Manager v0.3.1\n\n- 资料库文件另存为（单文件与批量）\n- 拖出文件到资源管理器或外部应用\n- 修复与体验优化",
+    "pub_date":  "2026-06-04T05:46:58Z",
     "platforms":  {
                       "windows-x86_64":  {
-                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUQzVNem8vcUx4anVzK09nUTY3KzlCUUt5UG5uY2JXZWR0M1Nvd0hxWU9tdEZ3VS8vUm9LSXB2Z2pqajVqQ3VSVU8xckUxS2N1YlA3VzZWMjRpU0FGQnRHVklUT2J1ZEFzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwMjMzODQ3CWZpbGU6RmlsZSBNYW5hZ2VyXzAuMy4wX3g2NC1zZXR1cC5leGUKUk9KOTJKanpMUUkxZDVxaXF0Z2xYSlFNeGdFZ2pUSzdBYktGS0VvSUliMWl1dkpKbmR1bW9VK0kwdjZwM2EyeGQyZXFvSG9DbmNDRHh1RmgvNDRFQVE9PQo=",
-                                             "url":  "https://github.com/crazyjackab/cp/releases/download/v0.3.0/File.Manager_0.3.0_x64-setup.exe"
+                                             "signature":  "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUQzVNem8vcUx4amlEMEM2UTBnMlgzOTc5OWRkanZZcW16Rkc2WGdOVnRXZnpVeDkrUlNrSk1yeitUajJ3V0VTNUlUV2h4Zm4vT21VNFlMTHd1YVd0R1NoUGNwc3RXa2dBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgwNTUxOTI2CWZpbGU6RmlsZSBNYW5hZ2VyXzAuMy4xX3g2NC1zZXR1cC5leGUKeEFlSzRIVVQvNVczaGowZjltQmpseEU5THFMdmhBTXU4WERVbFovSTV0aVpPUCtYQ1VqcE5aODVJUk1Zd3Y5REN4SVc0OVhWZXR1aHJhcTJhL2lEQ3c9PQo=",
+                                             "url":  "https://github.com/crazyjackab/cp/releases/download/v0.3.1/File.Manager_0.3.1_x64-setup.exe"
                                          }
                   }
 }

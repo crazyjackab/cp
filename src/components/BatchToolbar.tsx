@@ -1,4 +1,4 @@
-import { IconCheckSquare, IconFolder, IconRestore, IconStar, IconTrash } from "./icons";
+import { IconCheckSquare, IconFolder, IconRestore, IconSaveAs, IconStar, IconTrash } from "./icons";
 
 export interface BatchSelectionProps {
   totalCount: number;
@@ -17,6 +17,7 @@ interface ActionBarProps extends BatchSelectionProps {
   onFavorite: () => void;
   onUnfavorite: () => void;
   onRestore: () => void;
+  onSaveAs: () => void;
   onDelete: () => void;
 }
 
@@ -104,6 +105,7 @@ export function BatchActionBar({
   onFavorite,
   onUnfavorite,
   onRestore,
+  onSaveAs,
   onDelete,
 }: ActionBarProps) {
   if (totalCount === 0 || selectedCount === 0) return null;
@@ -171,6 +173,10 @@ export function BatchActionBar({
         <button type="button" className="btn btn-ghost btn-sm" disabled={disabled} onClick={onRestore}>
           <IconRestore size={15} />
           还原
+        </button>
+        <button type="button" className="btn btn-ghost btn-sm" disabled={disabled} onClick={onSaveAs}>
+          <IconSaveAs size={15} />
+          另存为
         </button>
         <button
           type="button"

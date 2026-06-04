@@ -18,7 +18,9 @@ export function InternalDragHint({ visible, target }: Props) {
         <IconFolder size={18} />
       </span>
       <span className="internal-drag-hint-text">{label}</span>
-      <span className="internal-drag-hint-sub">松开鼠标放入文件夹</span>
+      <span className="internal-drag-hint-sub">
+        {target ? "松开鼠标放入文件夹" : "继续拖出窗口可发送到微信/QQ"}
+      </span>
     </div>,
     document.body,
   );

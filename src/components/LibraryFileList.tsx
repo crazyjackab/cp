@@ -94,7 +94,9 @@ interface Props {
   onEditTags: (file: LibraryFile) => void;
   onToggleSelect: (file: LibraryFile, index: number, shiftKey: boolean, ctrlKey: boolean) => void;
   onRename: (file: LibraryFile) => void;
+  onSaveAs: (file: LibraryFile) => void;
   onDelete: (file: LibraryFile) => void;
+  onBatchSaveAs: () => void;
   onRestore: (file: LibraryFile) => void;
   onShowInFolder: (path: string) => void;
   onTagFilter: (tag: string) => void;
@@ -166,7 +168,9 @@ export function LibraryFileList({
   onEditTags,
   onToggleSelect,
   onRename,
+  onSaveAs,
   onDelete,
+  onBatchSaveAs,
   onRestore,
   onShowInFolder,
   onTagFilter,
@@ -327,6 +331,7 @@ export function LibraryFileList({
           onFavorite={onBatchFavorite}
           onUnfavorite={onBatchUnfavorite}
           onRestore={onBatchRestore}
+          onSaveAs={onBatchSaveAs}
           onDelete={onBatchDelete}
         />
       )}
@@ -431,6 +436,7 @@ export function LibraryFileList({
           onSetFavorite={onToggleFavorite}
           onEditTags={onEditTags}
           onRename={onRename}
+          onSaveAs={onSaveAs}
           onDelete={onDelete}
           onRestore={onRestore}
           onShowInFolder={onShowInFolder}

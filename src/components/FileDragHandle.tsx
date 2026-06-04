@@ -10,7 +10,7 @@ interface Props {
 export function FileDragHandle({
   paths,
   className = "",
-  title = "拖到左侧文件夹移动",
+  title = "拖到侧栏文件夹可移动；拖出窗口可发送到微信/QQ",
 }: Props) {
   const { startDrag } = useInternalFileDragStart();
 
